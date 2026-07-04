@@ -4,30 +4,66 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fusion 0.3 UI framework blueprint</title>
-<style>*{box-sizing:border-box}html,body{margin:0;padding:0}</style>
+<style>*{box-sizing:border-box}html,body{margin:0;padding:0;background:#15191F}</style>
 </head>
 <body>
 <style>
-  :root {
-    --paper: #FBFCFD;
-    --ink: #1B232B;
-    --muted: #5A6774;
-    --accent: #0B7285;
-    --accent-ink: #085566;
-    --code-bg: #14181D;
-    --code-ink: #D9E1E8;
-    --code-dim: #7E8A96;
-    --line: #DCE3E8;
-    --verified: #1B7A3D;
-    --verified-bg: #E8F4EC;
-    --docs-bg: #E6F2F5;
-    --synth: #8A5A08;
-    --synth-bg: #F7EFDD;
+  .fb {
     --display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
     --body: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
     --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", monospace;
+    --paper: #15191F;
+    --ink: #E3E9EF;
+    --muted: #9AA6B2;
+    --accent: #56B8D8;
+    --accent-ink: #7ECDE6;
+    --accent-strong: #1B6E8C;
+    --code-bg: #0E1116;
+    --code-ink: #D9E1E8;
+    --code-dim: #6E7A86;
+    --line: #2A323C;
+    --card: #1B222B;
+    --surface: #1B222B;
+    --code-inline: #232B35;
+    --row-line: #222932;
+    --v-fg: #86D8A0; --v-bg: #1C3A28;
+    --d-fg: #85CBE0; --d-bg: #163540;
+    --s-fg: #E4BE7C; --s-bg: #3B2F16;
+    color-scheme: dark;
   }
-  .fb { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; padding: 3.5rem 1.5rem 5rem; }
+  .fb[data-theme="midnight"] {
+    --paper: #0A0D14; --ink: #DDE3F0; --muted: #8B93A8;
+    --accent: #8B96F8; --accent-ink: #A6AEFF; --accent-strong: #3A44A8;
+    --code-bg: #05070C; --code-dim: #626C84; --line: #1E2433;
+    --card: #11151F; --surface: #11151F; --code-inline: #1A2030; --row-line: #181E2B;
+    --v-fg: #8FE0A8; --v-bg: #15321F;
+    --d-fg: #96A0FF; --d-bg: #1B2145;
+    --s-fg: #E8C27E; --s-bg: #332911;
+  }
+  .fb[data-theme="studio"] {
+    --paper: #252829; --ink: #E8E8E8; --muted: #A0A6A8;
+    --accent: #58B6E2; --accent-ink: #7CC5EA; --accent-strong: #1F5E80;
+    --code-bg: #1B1D1E; --code-dim: #7A8286; --line: #3A3F41;
+    --card: #2E3234; --surface: #2E3234; --code-inline: #35393B; --row-line: #333739;
+    --v-fg: #8CD9A0; --v-bg: #24402C;
+    --d-fg: #85CBE5; --d-bg: #1E3946;
+    --s-fg: #E2BC7A; --s-bg: #403213;
+  }
+  .fb[data-theme="light"] {
+    --paper: #FBFCFD; --ink: #1B232B; --muted: #5A6774;
+    --accent: #0B7285; --accent-ink: #085566; --accent-strong: #0B7285;
+    --code-bg: #14181D; --code-dim: #7E8A96; --line: #DCE3E8;
+    --card: #F2F7F9; --surface: #F3F6F8; --code-inline: #EEF2F5; --row-line: #ECF0F3;
+    --v-fg: #1B7A3D; --v-bg: #E8F4EC;
+    --d-fg: #085566; --d-bg: #E6F2F5;
+    --s-fg: #8A5A08; --s-bg: #F7EFDD;
+    color-scheme: light;
+  }
+  .fb { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; padding: 3.5rem 1.5rem 5rem; min-height: 100vh; }
+  .fb .themebar { display: flex; gap: 0.4rem; justify-content: flex-end; margin-bottom: 1.4rem; flex-wrap: wrap; }
+  .fb .tbtn { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.35em 0.8em; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+  .fb .tbtn[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); }
+  .fb .tbtn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
   .fb .wrap { max-width: 74ch; margin: 0 auto; }
   .fb h1, .fb h2, .fb h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; }
   .fb h1 { font-size: 2.3rem; font-weight: 700; letter-spacing: -0.02em; margin: 0.4rem 0 0.8rem; }
@@ -38,31 +74,31 @@
   .fb .kicker { color: var(--muted); font-size: 1.05rem; margin-bottom: 0; }
   .fb .meta { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); margin-top: 1.2rem; }
   .fb a { color: var(--accent-ink); text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset: 2px; }
-  .fb code { font-family: var(--mono); font-size: 0.86em; background: #EEF2F5; border-radius: 3px; padding: 0.08em 0.35em; }
+  .fb code { font-family: var(--mono); font-size: 0.86em; background: var(--code-inline); border-radius: 3px; padding: 0.08em 0.35em; }
   .fb pre { background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 1rem 1.2rem; overflow-x: auto; margin: 1.1rem 0 1.4rem; font-size: 0.82rem; line-height: 1.6; }
   .fb pre code { background: none; padding: 0; font-size: 1em; color: inherit; }
   .fb pre .cm { color: var(--code-dim); }
   .fb .badge { display: inline-block; font-family: var(--mono); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 3px; padding: 0.15em 0.5em; vertical-align: 0.15em; margin-right: 0.4rem; }
-  .fb .b-ver { color: var(--verified); background: var(--verified-bg); }
-  .fb .b-doc { color: var(--accent-ink); background: var(--docs-bg); }
-  .fb .b-syn { color: var(--synth); background: var(--synth-bg); }
-  .fb .b-lab { color: #FFFFFF; background: var(--accent); }
-  .fb .lab { border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); background: #F4F9FA; border-radius: 8px; padding: 0.85rem 1.1rem; margin: 1.1rem 0 1.4rem; font-size: 0.93rem; }
+  .fb .b-ver { color: var(--v-fg); background: var(--v-bg); }
+  .fb .b-doc { color: var(--d-fg); background: var(--d-bg); }
+  .fb .b-syn { color: var(--s-fg); background: var(--s-bg); }
+  .fb .b-lab { color: #FFFFFF; background: var(--accent-strong); }
+  .fb .lab { border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); background: var(--card); border-radius: 8px; padding: 0.85rem 1.1rem; margin: 1.1rem 0 1.4rem; font-size: 0.93rem; }
   .fb .lab .lab-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 0.4rem; }
   .fb .lab ul { margin-bottom: 0; }
   .fb .legend { display: flex; flex-wrap: wrap; gap: 0.7rem 1.6rem; border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1.1rem; margin: 1.6rem 0 0; font-size: 0.88rem; color: var(--muted); }
   .fb .legend > div { flex: 1 1 200px; min-width: 180px; }
   .fb table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-family: var(--display); }
   .fb .tablewrap { overflow-x: auto; margin: 1.1rem 0 1.4rem; border: 1px solid var(--line); border-radius: 8px; }
-  .fb th { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; text-align: left; color: var(--muted); padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--line); background: #F3F6F8; }
-  .fb td { padding: 0.55rem 0.9rem; border-bottom: 1px solid #ECF0F3; vertical-align: top; }
+  .fb th { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; text-align: left; color: var(--muted); padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .fb td { padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--row-line); vertical-align: top; }
   .fb tr:last-child td { border-bottom: none; }
   .fb .toc { font-family: var(--display); font-size: 0.92rem; columns: 2; column-gap: 2.5rem; margin: 1rem 0 0; padding: 0; list-style: none; counter-reset: toc; }
   .fb .toc li { counter-increment: toc; margin-bottom: 0.35rem; break-inside: avoid; }
   .fb .toc li::before { content: counter(toc, decimal-leading-zero); font-family: var(--mono); font-size: 0.72rem; color: var(--accent); margin-right: 0.6rem; }
   .fb .toc a { text-decoration: none; color: var(--ink); }
   .fb .toc a:hover { color: var(--accent-ink); }
-  .fb .rule-card { border-left: 3px solid var(--accent); background: #F2F7F9; border-radius: 0 8px 8px 0; padding: 0.85rem 1.1rem; margin: 1.1rem 0 1.4rem; font-size: 0.95rem; }
+  .fb .rule-card { border-left: 3px solid var(--accent); background: var(--card); border-radius: 0 8px 8px 0; padding: 0.85rem 1.1rem; margin: 1.1rem 0 1.4rem; font-size: 0.95rem; }
   .fb .rule-card strong { font-family: var(--display); }
   .fb ul, .fb ol { padding-left: 1.4rem; margin: 0 0 1rem; }
   .fb li { margin-bottom: 0.4rem; }
@@ -70,7 +106,14 @@
   .fb .footer-note { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1.2rem; font-size: 0.85rem; color: var(--muted); font-family: var(--display); }
   @media (max-width: 640px) { .fb .toc { columns: 1; } .fb h1 { font-size: 1.8rem; } }
 </style>
-<div class="fb"><div class="wrap">
+<div class="fb" data-theme="dark"><div class="wrap">
+
+<div class="themebar" role="group" aria-label="Color theme">
+  <button class="tbtn" data-set-theme="dark" aria-pressed="true">Dark</button>
+  <button class="tbtn" data-set-theme="midnight" aria-pressed="false">Midnight</button>
+  <button class="tbtn" data-set-theme="studio" aria-pressed="false">Studio</button>
+  <button class="tbtn" data-set-theme="light" aria-pressed="false">Light</button>
+</div>
 
 <span class="eyebrow">Architecture blueprint · adversarially verified research</span>
 <h1>Building a game UI framework on Fusion 0.3</h1>
@@ -85,6 +128,7 @@
 </div>
 
 <h2 id="toc">Contents</h2>
+<p style="margin-bottom:0.4rem;"><strong style="font-family:var(--display);">References:</strong> <a href="#api">Fusion v0.3-beta API</a> · <a href="#uilabs-ref">UI-Labs at a glance</a></p>
 <ol class="toc">
   <li><a href="#version">Version reality check</a></li>
   <li><a href="#scopes">Scopes: the core mental model</a></li>
@@ -103,6 +147,80 @@
   <li><a href="#template">The template place</a></li>
   <li><a href="#open">Open questions</a></li>
 </ol>
+
+<h2 id="api">Fusion v0.3-beta: the complete API</h2>
+<p><span class="badge b-lab">lab tested</span>Everything Fusion exports, taken from the actual export table in the installed source (<code>src/init.luau</code>, 26 members), not from docs or memory. The lab column marks what was directly exercised in the Studio test passes. Constructors marked with a scope are called as scope methods under <code>scoped()</code> syntax, e.g. <code>scope:Value(0)</code>.</p>
+
+<h3>Memory and lifetimes</h3>
+<div class="tablewrap"><table>
+  <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
+  <tr><td><code>scoped</code></td><td><code>scoped(Fusion, ...methodTables) → Scope</code></td><td>Creates a root scope; passed tables become callable methods. The recommended construction syntax (§2).</td><td>✓</td></tr>
+  <tr><td><code>innerScope</code></td><td><code>scope:innerScope() → Scope</code></td><td>Child scope, destroyed with its parent, cleanable early. The screen/feature lifetime tool (§2, §11).</td><td>✓</td></tr>
+  <tr><td><code>deriveScope</code></td><td><code>scope.deriveScope(scope) → Scope</code></td><td>Copies the method table only; fully independent lifecycle (§2).</td><td>✓</td></tr>
+  <tr><td><code>doCleanup</code></td><td><code>doCleanup(...tasks)</code></td><td>Universal destructor: reverse order, type-dispatched (functions called, instances destroyed, connections disconnected, tables recursed). Destroyed content is irrecoverable and fails silently afterward (§2).</td><td>✓</td></tr>
+  <tr><td><code>cleanup</code></td><td><em>legacy alias</em></td><td>Old name for <code>doCleanup</code>, kept for 0.2 compatibility. Use <code>doCleanup</code> in new code.</td><td></td></tr>
+</table></div>
+
+<h3>State and the graph</h3>
+<div class="tablewrap"><table>
+  <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
+  <tr><td><code>Value</code></td><td><code>scope:Value(initial) → Value&lt;T&gt;</code></td><td>Writable state; <code>:set(new)</code> is the only mutation. Similarity-checked on set (§10).</td><td>✓</td></tr>
+  <tr><td><code>Computed</code></td><td><code>scope:Computed(fn(use, scope)) → Computed&lt;T&gt;</code></td><td>Derived state. Lazy: evaluates on first read, re-evaluates on read after invalidation. Dependencies register per-evaluation through <code>use()</code> only (§3).</td><td>✓</td></tr>
+  <tr><td><code>peek</code></td><td><code>peek(state) → T</code></td><td>Reads any state object without creating a dependency. For handlers and one-shot logic (§3).</td><td>✓</td></tr>
+  <tr><td><code>Observer</code></td><td><code>scope:Observer(state) → Observer</code></td><td>Side effects: <code>:onChange(fn)</code> fires on change, <code>:onBind(fn)</code> fires immediately plus on change. Auto-disconnects on scope cleanup (§3).</td><td>✓</td></tr>
+  <tr><td><code>ForValues</code></td><td><code>scope:ForValues(tbl, fn(use, scope, v)) → For</code></td><td>Transforms values, preserves keys. Per-item scopes, cached by value identity: only changed items reprocess (§8).</td><td>✓</td></tr>
+  <tr><td><code>ForKeys</code></td><td><code>scope:ForKeys(tbl, fn(use, scope, k)) → For</code></td><td>Transforms keys, preserves values. Reprocesses only affected keys (§8).</td><td>✓</td></tr>
+  <tr><td><code>ForPairs</code></td><td><code>scope:ForPairs(tbl, fn(use, scope, k, v)) → For</code></td><td>Transforms both. One changed pair reprocesses exactly that pair (§8).</td><td>✓</td></tr>
+</table></div>
+
+<h3>Roblox instances and special keys</h3>
+<div class="tablewrap"><table>
+  <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
+  <tr><td><code>New</code></td><td><code>scope:New "ClassName" { props }</code></td><td>Creates an instance. String keys bind properties (state objects re-assign on change, synchronously). Scope owns the instance (§7).</td><td>✓</td></tr>
+  <tr><td><code>Hydrate</code></td><td><code>scope:Hydrate(instance) { props }</code></td><td>Binds properties onto an existing instance. Does not take ownership: cleanup kills bindings, the instance survives (§7).</td><td>✓</td></tr>
+  <tr><td><code>Children</code></td><td><code>[Children] = { ... }</code></td><td>Parents child instances, arrays, and For-objects; nesting flattens (§7, §8).</td><td>✓</td></tr>
+  <tr><td><code>Child</code></td><td><code>Child(list) → Child</code></td><td>Type helper that marks a value as parentable child content.</td><td></td></tr>
+  <tr><td><code>OnEvent</code></td><td><code>[OnEvent "Activated"] = fn</code></td><td>Connects an event; connection dies with the instance (§7).</td><td>✓</td></tr>
+  <tr><td><code>OnChange</code></td><td><code>[OnChange "Text"] = fn(new)</code></td><td>Property-changed callback with the new value (§7).</td><td>✓</td></tr>
+  <tr><td><code>Out</code></td><td><code>[Out "Text"] = someValue</code></td><td>Writes property changes back into a Value: instance to state, one direction. Captures the initial value too (§7).</td><td>✓</td></tr>
+  <tr><td><code>Attribute</code></td><td><code>[Attribute "Power"] = state</code></td><td>Binds an attribute, reactively (§7).</td><td>✓</td></tr>
+  <tr><td><code>AttributeChange</code></td><td><code>[AttributeChange "Power"] = fn(new)</code></td><td>Attribute-changed callback.</td><td></td></tr>
+  <tr><td><code>AttributeOut</code></td><td><code>[AttributeOut "Power"] = someValue</code></td><td>Attribute changes written back into a Value (§7).</td><td>✓</td></tr>
+</table></div>
+
+<h3>Animation</h3>
+<div class="tablewrap"><table>
+  <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
+  <tr><td><code>Tween</code></td><td><code>scope:Tween(goal, tweenInfo?) → Tween</code></td><td>State object that follows its goal along an easing curve. <code>tweenInfo</code> can be reactive. Interruption re-tweens smoothly from the current value (§9).</td><td>✓</td></tr>
+  <tr><td><code>Spring</code></td><td><code>scope:Spring(goal, speed?, damping?) → Spring</code></td><td>Physics-based following; speed and damping can be reactive. Damping 1 is critical (no overshoot). Works on numbers, UDim2, Color3, and other animatable types (§9).</td><td>✓</td></tr>
+</table></div>
+
+<h3>Utilities</h3>
+<div class="tablewrap"><table>
+  <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
+  <tr><td><code>Contextual</code></td><td><code>Contextual(default) → Contextual&lt;T&gt;</code></td><td><code>:now()</code> reads, <code>:is(v):during(fn)</code> overrides for the callback's duration. The sanctioned alternative to globals. Beware the lazy-evaluation trap: overrides must span the read, not the construction (§6). Takes no scope.</td><td>✓</td></tr>
+  <tr><td><code>Safe</code></td><td><code>Safe { try = fn, fallback = fn(err) }</code></td><td>Inline xpcall variant: returns <code>try</code>'s result, or <code>fallback</code>'s result on error. For fallible work inside computeds.</td><td></td></tr>
+  <tr><td><code>version</code></td><td><code>{ major = 0, minor = 3, isRelease = true }</code></td><td>Version table, straight from the source.</td><td>✓</td></tr>
+</table></div>
+<p>Exported types, for annotating your own code: <code>Scope&lt;S&gt;</code>, <code>UsedAs&lt;T&gt;</code> (raw value or state object; the props workhorse, §4), <code>Use</code>, <code>StateObject&lt;T&gt;</code>, <code>Value&lt;T&gt;</code>, <code>Computed&lt;T&gt;</code>, <code>For&lt;KO, VO&gt;</code>, <code>Observer</code>, <code>Spring&lt;T&gt;</code>, <code>Tween&lt;T&gt;</code>, <code>Animatable</code>, <code>Task</code>, <code>SpecialKey</code>, <code>PropertyTable</code>, <code>Child</code>, <code>ScopedObject</code>, <code>GraphObject</code>, <code>Contextual&lt;T&gt;</code>, <code>Version</code>.</p>
+
+<h2 id="uilabs-ref">UI-Labs at a glance</h2>
+<p><span class="badge b-doc">official docs</span>The storybook plugin for Roblox: build and iterate components in isolation, without running the game. The deep dive with the lab-tested story contract is in §14; this is the quick map.</p>
+<div class="tablewrap"><table>
+  <tr><th>Piece</th><th>What it is</th></tr>
+  <tr><td>Plugin</td><td><a href="https://create.roblox.com/store/asset/14293316215/UI-Labs">Creator Store asset 14293316215</a> (or GitHub releases). Dock widget with a story explorer, a live viewport canvas (multi-mounting supported), and a controls panel.</td></tr>
+  <tr><td>Utility package</td><td>Optional: Wally <code>pepeeltoro41/ui-labs</code>, npm <code>@rbxts/ui-labs</code>. Typed story helpers and advanced controls (dropdowns, sliders, color pickers). The plugin works without it.</td></tr>
+  <tr><td>Story files</td><td>ModuleScripts named with the <code>.story</code> suffix (<code>Button.story</code>), discovered anywhere in the place. Colocate next to components or keep a <code>stories/</code> folder; exclude from shipped builds.</td></tr>
+  <tr><td>Hot reload</td><td>Stories re-mount on edit, live. Code runs sandboxed: no side effects on the open place.</td></tr>
+</table></div>
+<div class="tablewrap"><table>
+  <tr><th>Story format</th><th>Shape</th></tr>
+  <tr><td>Function story</td><td>Module returns <code>function(target: Frame) → cleanup?</code>. Mount into <code>target</code>, return a cleanup function. Simplest form, works for anything.</td></tr>
+  <tr><td>Fusion story</td><td>Module returns <code>{ fusion = Fusion, story = fn(props), controls? }</code>. <code>props</code> carries <code>target</code>, <code>controls</code> (each declared control arrives as a ready-made <code>Fusion.Value</code>), and <code>scope</code> (0.3+). UI-Labs calls <code>doCleanup</code> on that scope at unmount, so no cleanup function is needed.</td></tr>
+  <tr><td>Controls</td><td>Declared as <code>key = defaultValue</code> pairs; primitive types (string, number, boolean) are inferred and editable in the panel. Advanced control types come from the utility package.</td></tr>
+  <tr><td>Other formats</td><td>React/Roact, Vide, and Iris stories follow the same table shape with their own library field.</td></tr>
+</table></div>
+<p>The reason this slots into the framework with zero adaptation: §4's convention types every reactive prop as <code>UsedAs&lt;T&gt;</code>, and UI-Labs hands you controls as state objects. A story is therefore also an architecture test; a component that cannot mount from scope, target, and a props table has hidden dependencies (§14).</p>
 
 <h2 id="version">1 · Version reality check</h2>
 <p><span class="badge b-ver">verified 3–0</span>The current release of Fusion is <strong>v0.3-beta</strong>, published 2024-08-30: GitHub's designated "Latest" and the only non-prerelease tag. A 0.4 exists only as an unreleased dev line (<code>0.4.0-dev1</code> in <code>wally.toml</code>) with draft docs. Everything in this report targets 0.3.</p>
@@ -683,6 +801,27 @@ router.Navigate("Hub")</code></pre>
 Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modules, Rojo layout) into a clean Roblox Studio baseplate; 16 test groups executed via Luau in the live place covering scope lifecycles, evaluation semantics, component composition, similarity behavior, For-object caching and scaling (including ForPairs and nested Fors), animation (including interruption and typed springs), Contextual, Hydrate/Out/attribute keys, error resilience, router teardown, hidden-binding costs, graph stress (deep chains, 1,000-binding fan-out), a 100-cycle leak check, and a simulated UI-Labs story-contract run. All timings are Studio edit-mode, single-threaded; directional, not absolute. Compiled and lab-expanded 2026-07-04 for AnimeAttack development.</p>
 
 </div></div>
+<script>
+(function () {
+  var root = document.querySelector(".fb");
+  if (!root) return;
+  var buttons = Array.prototype.slice.call(root.querySelectorAll("[data-set-theme]"));
+  var valid = ["dark", "midnight", "studio", "light"];
+  function apply(name) {
+    root.setAttribute("data-theme", name);
+    buttons.forEach(function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-set-theme") === name ? "true" : "false");
+    });
+    try { localStorage.setItem("fbTheme", name); } catch (e) {}
+  }
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () { apply(b.getAttribute("data-set-theme")); });
+  });
+  var saved = null;
+  try { saved = localStorage.getItem("fbTheme"); } catch (e) {}
+  apply(valid.indexOf(saved) >= 0 ? saved : "dark");
+})();
+</script>
 
 </body>
 </html>
