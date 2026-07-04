@@ -1,0 +1,6257 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+  <Item class="Workspace" referent="RBX0">
+    <Properties><string name="Name">Workspace</string></Properties>
+    <Item class="Part" referent="RBX1">
+      <Properties>
+        <string name="Name">Baseplate</string>
+        <bool name="Anchored">true</bool>
+        <token name="BrickColor">194</token>
+        <Vector3 name="size"><X>512</X><Y>20</Y><Z>512</Z></Vector3>
+        <CoordinateFrame name="CFrame"><X>0</X><Y>-10</Y><Z>0</Z><R00>1</R00><R01>0</R01><R02>0</R02><R10>0</R10><R11>1</R11><R12>0</R12><R20>0</R20><R21>0</R21><R22>1</R22></CoordinateFrame>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="ReplicatedStorage" referent="RBX2">
+    <Properties><string name="Name">ReplicatedStorage</string></Properties>
+    <Item class="ModuleScript" referent="RBX3">
+      <Properties>
+        <string name="Name">Fusion</string>
+        <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+--[[
+	The entry point for the Fusion library.
+]]
+
+local Types = require(script.Types)
+local External = require(script.External)
+
+type Fusion = Types.Fusion
+
+export type Animatable = Types.Animatable
+export type UsedAs&lt;T&gt; = Types.UsedAs&lt;T&gt;
+export type Child = Types.Child
+export type Computed&lt;T&gt; = Types.Computed&lt;T&gt;
+export type Contextual&lt;T&gt; = Types.Contextual&lt;T&gt;
+export type GraphObject = Types.GraphObject
+export type For&lt;KO, VO&gt; = Types.For&lt;KO, VO&gt;
+export type Observer = Types.Observer
+export type PropertyTable = Types.PropertyTable
+export type Scope&lt;Constructors = Fusion&gt; = Types.Scope&lt;Constructors&gt;
+export type ScopedObject = Types.ScopedObject
+export type SpecialKey = Types.SpecialKey
+export type Spring&lt;T&gt; = Types.Spring&lt;T&gt;
+export type StateObject&lt;T&gt; = Types.StateObject&lt;T&gt;
+export type Task = Types.Task
+export type Tween&lt;T&gt; = Types.Tween&lt;T&gt;
+export type Use = Types.Use
+export type Value&lt;T, S = T&gt; = Types.Value&lt;T, S&gt;
+export type Version = Types.Version
+
+-- Down the line, this will be conditional based on whether Fusion is being
+-- compiled for Roblox.
+do
+	local RobloxExternal = require(script.RobloxExternal)
+	External.setExternalProvider(RobloxExternal)
+end
+
+local Fusion: Fusion = table.freeze {
+	-- General
+	version = {major = 0, minor = 3, isRelease = true},
+	Contextual = require(script.Utility.Contextual),
+	Safe = require(script.Utility.Safe),
+
+	-- Memory
+	cleanup = require(script.Memory.legacyCleanup),
+	deriveScope = require(script.Memory.deriveScope),
+	doCleanup = require(script.Memory.doCleanup),
+	innerScope = require(script.Memory.innerScope),
+	scoped = require(script.Memory.scoped),
+	
+	-- Graph
+	Observer = require(script.Graph.Observer),
+
+	-- State
+	Computed = require(script.State.Computed),
+	ForKeys = require(script.State.ForKeys) :: Types.ForKeysConstructor,
+	ForPairs = require(script.State.ForPairs) :: Types.ForPairsConstructor,
+	ForValues = require(script.State.ForValues) :: Types.ForValuesConstructor,
+	peek = require(script.State.peek),
+	Value = require(script.State.Value),
+
+	-- Roblox API
+	Attribute = require(script.Instances.Attribute),
+	AttributeChange = require(script.Instances.AttributeChange),
+	AttributeOut = require(script.Instances.AttributeOut),
+	Child = require(script.Instances.Child),
+	Children = require(script.Instances.Children),
+	Hydrate = require(script.Instances.Hydrate),
+	New = require(script.Instances.New),
+	OnChange = require(script.Instances.OnChange),
+	OnEvent = require(script.Instances.OnEvent),
+	Out = require(script.Instances.Out),
+
+	-- Animation
+	Tween = require(script.Animation.Tween),
+	Spring = require(script.Animation.Spring),
+}
+
+return Fusion
+</ProtectedString>
+      </Properties>
+      <Item class="Folder" referent="RBX4">
+        <Properties>
+          <string name="Name">Animation</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX5">
+          <Properties>
+            <string name="Name">ExternalTime</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Outputs the current external time as a state object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Graph
+local change = require(Package.Graph.change)
+-- Utility
+local nicknames = require(Package.Utility.nicknames)
+
+type ExternalTime = Types.StateObject&lt;number&gt;
+
+type Self = ExternalTime
+
+local class = {}
+class.type = "State"
+class.kind = "ExternalTime"
+class.timeliness = "lazy"
+class.dependencySet = table.freeze {}
+class._EXTREMELY_DANGEROUS_usedAsValue = External.lastUpdateStep()
+
+local METATABLE = table.freeze {__index = class}
+
+local allTimers: {Self} = {}
+
+local function ExternalTime(
+	scope: Types.Scope&lt;unknown&gt;
+): ExternalTime
+	local createdAt = os.clock()
+	local self: Self = setmetatable(
+		{
+			createdAt = createdAt,
+			dependentSet = {},
+			lastChange = nil,
+			scope = scope,
+			validity = "invalid"
+		}, 
+		METATABLE
+	) :: any
+	local destroy = function()
+		self.scope = nil
+		local index = table.find(allTimers, self)
+		if index ~= nil then
+			table.remove(allTimers, index)
+		end
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "ExternalTime"
+	table.insert(scope, destroy)
+	table.insert(allTimers, self)
+	return self
+end
+
+function class._evaluate(
+	self: Self
+): boolean
+	-- While someone else could call `change()` on this object, it wouldn't be
+	-- idiomatic. So, since the only idiomatic time this function runs is when
+	-- the external update step runs, it's safe enough to assume that the result
+	-- has always meaningfully changed. The worst that can happen is unexpected
+	-- refreshing for people doing unorthodox shenanigans, which is an OK trade.
+	return true
+end
+
+External.bindToUpdateStep(function(
+	externalNow: number
+): ()
+	class._EXTREMELY_DANGEROUS_usedAsValue = External.lastUpdateStep()
+	for _, timer in allTimers do
+		change(timer)
+	end
+end)
+
+-- Do *not* freeze the class table, because it stores the shared value of all
+-- external time objects, and is updated every frame because of that.
+-- table.freeze(class)
+return ExternalTime</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX6">
+          <Properties>
+            <string name="Name">getTweenDuration</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Given a `tweenInfo`, returns how many seconds it will take before the tween
+	finishes moving. The result may be infinite if the tween repeats forever.
+]]
+
+local TweenService = game:GetService("TweenService")
+
+local function getTweenDuration(
+	tweenInfo: TweenInfo
+): number
+	if tweenInfo.RepeatCount &lt;= -1 then
+		return math.huge
+	end
+	local tweenDuration = tweenInfo.DelayTime + tweenInfo.Time
+	if tweenInfo.Reverses then
+		tweenDuration += tweenInfo.Time
+	end
+	tweenDuration *= tweenInfo.RepeatCount + 1
+	return tweenDuration
+end
+
+return getTweenDuration
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX7">
+          <Properties>
+            <string name="Name">getTweenRatio</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Given a `tweenInfo` and `currentTime`, returns a ratio which can be used to
+	tween between two values over time.
+]]
+
+local TweenService = game:GetService("TweenService")
+
+local function getTweenRatio(
+	tweenInfo: TweenInfo,
+	currentTime: number
+): number
+	local delay = tweenInfo.DelayTime
+	local duration = tweenInfo.Time
+	local reverses = tweenInfo.Reverses
+	local numCycles = 1 + tweenInfo.RepeatCount
+	local easeStyle = tweenInfo.EasingStyle
+	local easeDirection = tweenInfo.EasingDirection
+	local cycleDuration = delay + duration
+	if reverses then
+		cycleDuration += duration
+	end
+	-- If currentTime is infinity, then presumably the tween should be over.
+	-- This avoids NaN when the duration of an infinitely repeating tween is given.
+	if currentTime == math.huge then
+		return 1
+	end
+	if currentTime &gt;= cycleDuration * numCycles and tweenInfo.RepeatCount &gt; -1 then
+		return 1
+	end
+	local cycleTime = currentTime % cycleDuration
+	if cycleTime &lt;= delay then
+		return 0
+	end
+	local tweenProgress = (cycleTime - delay) / duration
+	if tweenProgress &gt; 1 then
+		tweenProgress = 2 - tweenProgress
+	end
+	local ratio = TweenService:GetValue(tweenProgress, easeStyle, easeDirection)
+	return ratio
+end
+
+return getTweenRatio
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX8">
+          <Properties>
+            <string name="Name">lerpType</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Linearly interpolates the given animatable types by a ratio.
+	If the types are different or not animatable, then the first value will be
+	returned for ratios below 0.5, and the second value for 0.5 and above.
+]]
+
+local Package = script.Parent.Parent
+local Oklab = require(Package.Colour.Oklab)
+
+local function lerpType(
+	from: unknown, 
+	to: unknown, 
+	ratio: number
+): unknown
+	local typeString = typeof(from)
+
+	if typeof(to) == typeString then
+		-- both types must match for interpolation to make sense
+		if typeString == "number" then
+			local to, from = to :: number, from :: number
+			return (to - from) * ratio + from
+
+		elseif typeString == "CFrame" then
+			local to, from = to :: CFrame, from :: CFrame
+			return from:Lerp(to, ratio)
+
+		elseif typeString == "Color3" then
+			local to, from = to :: Color3, from :: Color3
+			local fromLab = Oklab.fromSRGB(from)
+			local toLab = Oklab.fromSRGB(to)
+			return Oklab.toSRGB(
+				fromLab:Lerp(toLab, ratio),
+				false
+			)
+
+		elseif typeString == "ColorSequenceKeypoint" then
+			local to, from = to :: ColorSequenceKeypoint, from :: ColorSequenceKeypoint
+			local fromLab = Oklab.fromSRGB(from.Value)
+			local toLab = Oklab.fromSRGB(to.Value)
+			return ColorSequenceKeypoint.new(
+				(to.Time - from.Time) * ratio + from.Time,
+				Oklab.toSRGB(
+					fromLab:Lerp(toLab, ratio),
+					false
+				)
+			)
+
+		elseif typeString == "DateTime" then
+			local to, from = to :: DateTime, from :: DateTime
+			return DateTime.fromUnixTimestampMillis(
+				(to.UnixTimestampMillis - from.UnixTimestampMillis) * ratio + from.UnixTimestampMillis
+			)
+
+		elseif typeString == "NumberRange" then
+			local to, from = to :: NumberRange, from :: NumberRange
+			return NumberRange.new(
+				(to.Min - from.Min) * ratio + from.Min,
+				(to.Max - from.Max) * ratio + from.Max
+			)
+
+		elseif typeString == "NumberSequenceKeypoint" then
+			local to, from = to :: NumberSequenceKeypoint, from :: NumberSequenceKeypoint
+			return NumberSequenceKeypoint.new(
+				(to.Time - from.Time) * ratio + from.Time,
+				(to.Value - from.Value) * ratio + from.Value,
+				(to.Envelope - from.Envelope) * ratio + from.Envelope
+			)
+
+		elseif typeString == "PhysicalProperties" then
+			local to, from = to :: PhysicalProperties, from :: PhysicalProperties
+			return PhysicalProperties.new(
+				(to.Density - from.Density) * ratio + from.Density,
+				(to.Friction - from.Friction) * ratio + from.Friction,
+				(to.Elasticity - from.Elasticity) * ratio + from.Elasticity,
+				(to.FrictionWeight - from.FrictionWeight) * ratio + from.FrictionWeight,
+				(to.ElasticityWeight - from.ElasticityWeight) * ratio + from.ElasticityWeight
+			)
+
+		elseif typeString == "Ray" then
+			local to, from = to :: Ray, from :: Ray
+			return Ray.new(
+				from.Origin:Lerp(to.Origin, ratio),
+				from.Direction:Lerp(to.Direction, ratio)
+			)
+
+		elseif typeString == "Rect" then
+			local to, from = to :: Rect, from :: Rect
+			return Rect.new(
+				from.Min:Lerp(to.Min, ratio),
+				from.Max:Lerp(to.Max, ratio)
+			)
+
+		elseif typeString == "Region3" then
+			local to, from = to :: Region3, from :: Region3
+			-- FUTURE: support rotated Region3s if/when they become constructable
+			local position = from.CFrame.Position:Lerp(to.CFrame.Position, ratio)
+			local halfSize = from.Size:Lerp(to.Size, ratio) / 2
+			return Region3.new(position - halfSize, position + halfSize)
+
+		elseif typeString == "Region3int16" then
+			local to, from = to :: Region3int16, from :: Region3int16
+			return Region3int16.new(
+				Vector3int16.new(
+					(to.Min.X - from.Min.X) * ratio + from.Min.X,
+					(to.Min.Y - from.Min.Y) * ratio + from.Min.Y,
+					(to.Min.Z - from.Min.Z) * ratio + from.Min.Z
+				),
+				Vector3int16.new(
+					(to.Max.X - from.Max.X) * ratio + from.Max.X,
+					(to.Max.Y - from.Max.Y) * ratio + from.Max.Y,
+					(to.Max.Z - from.Max.Z) * ratio + from.Max.Z
+				)
+			)
+
+		elseif typeString == "UDim" then
+			local to, from = to :: UDim, from :: UDim
+			return UDim.new(
+				(to.Scale - from.Scale) * ratio + from.Scale,
+				(to.Offset - from.Offset) * ratio + from.Offset
+			)
+
+		elseif typeString == "UDim2" then
+			local to, from = to :: UDim2, from :: UDim2
+			return from:Lerp(to, ratio)
+
+		elseif typeString == "Vector2" then
+			local to, from = to :: Vector2, from :: Vector2
+			return from:Lerp(to, ratio)
+
+		elseif typeString == "Vector2int16" then
+			local to, from = to :: Vector2int16, from :: Vector2int16
+			return Vector2int16.new(
+				(to.X - from.X) * ratio + from.X,
+				(to.Y - from.Y) * ratio + from.Y
+			)
+
+		elseif typeString == "Vector3" then
+			local to, from = to :: Vector3, from :: Vector3
+			return from:Lerp(to, ratio)
+
+		elseif typeString == "Vector3int16" then
+			local to, from = to :: Vector3int16, from :: Vector3int16
+			return Vector3int16.new(
+				(to.X - from.X) * ratio + from.X,
+				(to.Y - from.Y) * ratio + from.Y,
+				(to.Z - from.Z) * ratio + from.Z
+			)
+		end
+	end
+
+	-- fallback case: the types are different or not animatable
+	if ratio &lt; 0.5 then
+		return from
+	else
+		return to
+	end
+end
+
+return lerpType</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX9">
+          <Properties>
+            <string name="Name">packType</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Packs an array of numbers into a given animatable data type.
+	If the type is not animatable, nil will be returned.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local Oklab = require(Package.Colour.Oklab)
+
+local function packType(
+	numbers: {number},
+	typeString: string
+): Types.Animatable?
+	if typeString == "number" then
+		return numbers[1]
+
+	elseif typeString == "CFrame" then
+		return
+			CFrame.new(numbers[1], numbers[2], numbers[3]) *
+			CFrame.fromAxisAngle(
+				Vector3.new(numbers[4], numbers[5], numbers[6]).Unit,
+				numbers[7]
+			)
+
+	elseif typeString == "Color3" then
+		return Oklab.toSRGB(
+			Vector3.new(numbers[1], numbers[2], numbers[3]),
+			false
+		)
+
+	elseif typeString == "ColorSequenceKeypoint" then
+		return ColorSequenceKeypoint.new(
+			numbers[4],
+			Oklab.toSRGB(
+				Vector3.new(numbers[1], numbers[2], numbers[3]),
+				false
+			)
+		)
+
+	elseif typeString == "DateTime" then
+		return DateTime.fromUnixTimestampMillis(numbers[1])
+
+	elseif typeString == "NumberRange" then
+		return NumberRange.new(numbers[1], numbers[2])
+
+	elseif typeString == "NumberSequenceKeypoint" then
+		return NumberSequenceKeypoint.new(numbers[2], numbers[1], numbers[3])
+
+	elseif typeString == "PhysicalProperties" then
+		return PhysicalProperties.new(numbers[1], numbers[2], numbers[3], numbers[4], numbers[5])
+
+	elseif typeString == "Ray" then
+		return Ray.new(
+			Vector3.new(numbers[1], numbers[2], numbers[3]),
+			Vector3.new(numbers[4], numbers[5], numbers[6])
+		)
+
+	elseif typeString == "Rect" then
+		return Rect.new(numbers[1], numbers[2], numbers[3], numbers[4])
+
+	elseif typeString == "Region3" then
+		-- FUTURE: support rotated Region3s if/when they become constructable
+		local position = Vector3.new(numbers[1], numbers[2], numbers[3])
+		local halfSize = Vector3.new(numbers[4] / 2, numbers[5] / 2, numbers[6] / 2)
+		return Region3.new(position - halfSize, position + halfSize)
+
+	elseif typeString == "Region3int16" then
+		return Region3int16.new(
+			Vector3int16.new(numbers[1], numbers[2], numbers[3]),
+			Vector3int16.new(numbers[4], numbers[5], numbers[6])
+		)
+
+	elseif typeString == "UDim" then
+		return UDim.new(numbers[1], numbers[2])
+
+	elseif typeString == "UDim2" then
+		return UDim2.new(numbers[1], numbers[2], numbers[3], numbers[4])
+
+	elseif typeString == "Vector2" then
+		return Vector2.new(numbers[1], numbers[2])
+
+	elseif typeString == "Vector2int16" then
+		return Vector2int16.new(numbers[1], numbers[2])
+
+	elseif typeString == "Vector3" then
+		return Vector3.new(numbers[1], numbers[2], numbers[3])
+
+	elseif typeString == "Vector3int16" then
+		return Vector3int16.new(numbers[1], numbers[2], numbers[3])
+	else
+		return nil
+	end
+end
+
+return packType</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX10">
+          <Properties>
+            <string name="Name">Spring</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A specialised state object for following a goal state smoothly over time,
+	using physics to shape the motion.
+
+	https://elttob.uk/Fusion/0.3/api-reference/animation/types/spring/
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- Graph
+local depend = require(Package.Graph.depend)
+local change = require(Package.Graph.change)
+local evaluate = require(Package.Graph.evaluate)
+-- State
+local castToState = require(Package.State.castToState)
+local peek = require(Package.State.peek)
+-- Animation
+local ExternalTime = require(Package.Animation.ExternalTime)
+local Stopwatch = require(Package.Animation.Stopwatch)
+local packType = require(Package.Animation.packType)
+local unpackType = require(Package.Animation.unpackType)
+local springCoefficients = require(Package.Animation.springCoefficients)
+-- Utility
+local nicknames = require(Package.Utility.nicknames)
+
+local EPSILON = 0.00001
+
+type Self&lt;T&gt; = Types.Spring&lt;T&gt; &amp; {
+	_activeDamping: number,
+	_activeGoal: T,
+	_activeLatestP: {number},
+	_activeLatestV: {number},
+	_activeNumSprings: number,
+	_activeSpeed: number,
+	_activeStartP: {number},
+	_activeStartV: {number},
+	_activeTargetP: {number},
+	_activeType: string,
+	_speed: Types.UsedAs&lt;number&gt;,
+	_damping: Types.UsedAs&lt;number&gt;,
+	_goal: Types.UsedAs&lt;T&gt;,
+	_stopwatch: Stopwatch.Stopwatch
+}
+
+local class = {}
+class.type = "State"
+class.kind = "Spring"
+class.timeliness = "eager"
+
+local METATABLE = table.freeze {__index = class}
+
+local function Spring&lt;T&gt;(
+	scope: Types.Scope&lt;unknown&gt;,
+	goal: Types.UsedAs&lt;T&gt;,
+	speed: Types.UsedAs&lt;number&gt;?,
+	damping: Types.UsedAs&lt;number&gt;?
+): Types.Spring&lt;T&gt;
+	local createdAt = os.clock()
+	if typeof(scope) ~= "table" or castToState(scope) ~= nil then
+		External.logError("scopeMissing", nil, "Springs", "myScope:Spring(goalState, speed, damping)")
+	end
+
+	local goalState = castToState(goal)
+	local stopwatch = nil
+	if goalState ~= nil then
+		stopwatch = Stopwatch(scope, ExternalTime(scope))
+		stopwatch:unpause()
+	end
+
+	local speed = speed or 10
+	local damping = damping or 1
+
+	local self: Self&lt;T&gt; = setmetatable(
+		{
+			createdAt = createdAt,
+			dependencySet = {},
+			dependentSet = {},
+			lastChange = nil,
+			scope = scope,
+			validity = "invalid",
+			_activeDamping = -1,
+			_activeGoal = nil,
+			_activeLatestP = {},
+			_activeLatestV = {},
+			_activeNumSprings = 0,
+			_activeSpeed = -1,
+			_activeStartP = {},
+			_activeStartV = {},
+			_activeTargetP = {},
+			_activeType = "",
+			_damping = damping,
+			_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
+			_goal = goal,
+			_speed = speed,
+			_stopwatch = stopwatch
+		},
+		METATABLE
+	) :: any
+	local destroy = function()
+		self.scope = nil
+		for dependency in pairs(self.dependencySet) do
+			dependency.dependentSet[self] = nil
+		end
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "Spring"
+	table.insert(scope, destroy)
+	
+	if goalState ~= nil then
+		checkLifetime.bOutlivesA(
+			scope, self.oldestTask,
+			goalState.scope, goalState.oldestTask,
+			checkLifetime.formatters.animationGoal
+		)
+	end
+	local speedState = castToState(speed)
+	if speedState ~= nil then
+		checkLifetime.bOutlivesA(
+			scope, self.oldestTask,
+			speedState.scope, speedState.oldestTask,
+			checkLifetime.formatters.parameter, "speed"
+		)
+	end
+	local dampingState = castToState(damping)
+	if dampingState ~= nil then
+		checkLifetime.bOutlivesA(
+			scope, self.oldestTask,
+			dampingState.scope, dampingState.oldestTask,
+			checkLifetime.formatters.parameter, "damping"
+		)
+	end
+
+	-- Eagerly evaluated objects need to evaluate themselves so that they're
+	-- valid at all times.
+	evaluate(self, true)
+
+	return self
+end
+
+function class.addVelocity&lt;T&gt;(
+	self: Self&lt;T&gt;,
+	deltaValue: T
+): ()
+	evaluate(self, false) -- ensure the _active params are up to date
+	local deltaType = typeof(deltaValue)
+	if deltaType ~= self._activeType then
+		External.logError("springTypeMismatch", nil, deltaType, self._activeType)
+	end
+	local newStartV = unpackType(deltaValue, deltaType)
+	for index, velocity in self._activeLatestV do
+		newStartV[index] += velocity
+	end
+	self._activeStartP = table.clone(self._activeLatestP)
+	self._activeStartV = newStartV
+	self._stopwatch:zero()
+	self._stopwatch:unpause()
+	change(self)
+end
+
+function class.get&lt;T&gt;(
+	self: Self&lt;T&gt;
+): never
+	return External.logError("stateGetWasRemoved")
+end
+
+function class.setPosition&lt;T&gt;(
+	self: Self&lt;T&gt;,
+	newValue: T
+): ()
+	evaluate(self, false) -- ensure the _active params are up to date
+	local newType = typeof(newValue)
+	if newType ~= self._activeType then
+		External.logError("springTypeMismatch", nil, newType, self._activeType)
+	end
+	self._activeStartP = unpackType(newValue, newType)
+	self._activeStartV = table.clone(self._activeLatestV)
+	self._stopwatch:zero()
+	self._stopwatch:unpause()
+	change(self)
+end
+
+function class.setVelocity&lt;T&gt;(
+	self: Self&lt;T&gt;,
+	newValue: T
+): ()
+	evaluate(self, false) -- ensure the _active params are up to date
+	local newType = typeof(newValue)
+	if newType ~= self._activeType then
+		External.logError("springTypeMismatch", nil, newType, self._activeType)
+	end
+	self._activeStartP = table.clone(self._activeLatestP)
+	self._activeStartV = unpackType(newValue, newType)
+	self._stopwatch:zero()
+	self._stopwatch:unpause()
+	change(self)
+end
+
+function class._evaluate&lt;T&gt;(
+	self: Self&lt;T&gt;
+): boolean
+	local goal = castToState(self._goal)
+	-- Allow non-state goals to pass through transparently.
+	if goal == nil then
+		self._EXTREMELY_DANGEROUS_usedAsValue = self._goal :: T
+		return false
+	end
+	-- depend(self, goal)
+	local nextFrameGoal = peek(goal)
+	-- Protect against NaN goals.
+	if nextFrameGoal ~= nextFrameGoal then
+		External.logWarn("springNanGoal")
+		return false
+	end
+	local nextFrameGoalType = typeof(nextFrameGoal)
+	local discontinuous = nextFrameGoalType ~= self._activeType
+
+	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
+	local elapsed = peek(stopwatch)
+	depend(self, stopwatch)
+
+	local oldValue = self._EXTREMELY_DANGEROUS_usedAsValue
+	local newValue: T
+
+	if discontinuous then
+		-- Propagate changes in type instantly throughout the whole reactive
+		-- graph, even if simulation is logically one frame behind, because it
+		-- makes the whole graph behave more consistently.
+		newValue = nextFrameGoal
+	elseif elapsed &lt;= 0 then
+		newValue = oldValue
+	else
+		-- Calculate spring motion.
+		-- IMPORTANT: use the parameters from last frame, not this frame. We're
+		-- integrating the motion that happened over the last frame, after all.
+		-- The stopwatch will have captured the length of time needed correctly.
+		local posPos, posVel, velPos, velVel = springCoefficients(
+			elapsed, 
+			self._activeDamping, 
+			self._activeSpeed
+		)
+		local isMoving = false
+		for index = 1, self._activeNumSprings do
+			local startP = self._activeStartP[index]
+			local targetP = self._activeTargetP[index]
+			local startV = self._activeStartV[index]
+			local startD = startP - targetP
+			local latestD = startD * posPos + startV * posVel
+			local latestV = startD * velPos + startV * velVel
+			if latestD ~= latestD or latestV ~= latestV then
+				External.logWarn("springNanMotion")
+				latestD, latestV = 0, 0
+			end
+			if math.abs(latestD) &gt; EPSILON or math.abs(latestV) &gt; EPSILON then
+				isMoving = true
+			end
+			local latestP = latestD + targetP
+			self._activeLatestP[index] = latestP
+			self._activeLatestV[index] = latestV
+		end
+		-- Sleep and snap to goal if the motion has decayed to a negligible amount.
+		if not isMoving then
+			for index = 1, self._activeNumSprings do
+				self._activeLatestP[index] = self._activeTargetP[index]
+			end
+			-- TODO: figure out how to do sleeping correctly for single frame
+			-- changes
+			-- stopwatch:pause()
+			-- stopwatch:zero()
+		end
+		-- Pack springs into final value.
+		newValue = packType(self._activeLatestP, self._activeType) :: any
+	end
+
+	-- Reconfigure spring when any of its parameters are changed.
+	-- This should happen after integrating the last frame's motion.
+	-- NOTE: don't need to add a dependency on these objects! they do not cause
+	-- a spring to wake from sleep, so the stopwatch dependency is sufficient.
+	local nextFrameSpeed = peek(self._speed) :: number
+	local nextFrameDamping = peek(self._damping) :: number
+	if
+		discontinuous or
+		nextFrameGoal ~= self._activeGoal or
+		nextFrameSpeed ~= self._activeSpeed or
+		nextFrameDamping ~= self._activeDamping
+	then
+		self._activeTargetP = unpackType(nextFrameGoal, nextFrameGoalType)
+		self._activeNumSprings = #self._activeTargetP
+		if discontinuous then
+			self._activeStartP = table.clone(self._activeTargetP)
+			self._activeLatestP = table.clone(self._activeTargetP)
+			self._activeStartV = table.create(self._activeNumSprings, 0)
+			self._activeLatestV = table.create(self._activeNumSprings, 0)
+		else
+			self._activeStartP = table.clone(self._activeLatestP)
+			self._activeStartV = table.clone(self._activeLatestV)
+		end
+		self._activeType = nextFrameGoalType
+		self._activeGoal = nextFrameGoal
+		self._activeDamping = nextFrameDamping
+		self._activeSpeed = nextFrameSpeed
+		stopwatch:zero()
+		stopwatch:unpause()
+	end
+
+	-- Push update and check for similarity.
+	-- Don't need to use the similarity test here because this code doesn't
+	-- deal with tables, and NaN is already guarded against, so the similarity
+	-- test doesn't actually add any new safety here.
+	self._EXTREMELY_DANGEROUS_usedAsValue = newValue
+	return oldValue ~= newValue
+end
+
+table.freeze(class)
+return Spring :: Types.SpringConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX11">
+          <Properties>
+            <string name="Name">springCoefficients</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Returns a 2x2 matrix of coefficients for a given time, damping and angular
+	frequency (aka 'speed').
+	
+	Specifically, this returns four coefficients - posPos, posVel, velPos, and
+	velVel - which can be multiplied with position and velocity like so:
+
+	local newPosition = oldPosition * posPos + oldVelocity * posVel
+	local newVelocity = oldPosition * velPos + oldVelocity * velVel
+
+	For speed = 1 and damping = 0, the result is a simple harmonic oscillator
+	with a period of tau.
+
+	Special thanks to AxisAngle for helping to improve numerical precision.
+]]
+
+local function springCoefficients(
+	time: number,
+	damping: number,
+	speed: number
+): (number, number, number, number)
+	-- if time or speed is 0, then the spring won't move
+	if time == 0 or speed == 0 then
+		return 1, 0, 0, 1
+	end
+	local posPos, posVel, velPos, velVel
+
+	if damping &gt; 1 then
+		-- overdamped spring
+
+		local alpha = math.sqrt(damping^2 - 1)
+		local negHalf_over_alpha_speed = -0.5 / (alpha * speed)
+		local z1 = speed * (alpha + damping) * -1
+		local z2 = speed * (alpha - damping)
+		local exp1 = math.exp(time * z1)
+		local exp2 = math.exp(time * z2)
+
+		posPos = (exp2 * z1 - exp1 * z2) * negHalf_over_alpha_speed
+		posVel = (exp1 - exp2) * negHalf_over_alpha_speed / speed
+		velPos = (exp2 - exp1) * negHalf_over_alpha_speed * speed
+		velVel = (exp1 * z1 - exp2 * z2) * negHalf_over_alpha_speed
+
+	elseif damping == 1 then
+		-- critically damped spring
+
+		local time_speed = time * speed
+		local time_speed_neg1 = time_speed * -1
+		local exp = math.exp(time_speed_neg1)
+
+		posPos = exp * (time_speed + 1)
+		posVel = exp * time
+		velPos = exp * (time_speed_neg1 * speed)
+		velVel = exp * (time_speed_neg1 + 1)
+	else
+		-- underdamped spring
+
+		local alpha = speed * math.sqrt(1 - damping^2)
+		local overAlpha = 1 / alpha
+		local exp = math.exp(-1 * time * speed * damping)
+		local sin = math.sin(alpha * time)
+		local cos = math.cos(alpha * time)
+		local exp_sin = exp * sin
+		local exp_cos = exp * cos
+		local exp_sin_speed_damping_overAlpha = exp_sin * speed * damping * overAlpha
+
+		posPos = exp_sin_speed_damping_overAlpha + exp_cos
+		posVel = exp_sin * overAlpha
+		velPos = -1 * ( exp_sin * alpha + speed * damping * exp_sin_speed_damping_overAlpha )
+		velVel = exp_cos - exp_sin_speed_damping_overAlpha
+	end
+
+	return posPos, posVel, velPos, velVel
+end
+
+return springCoefficients
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX12">
+          <Properties>
+            <string name="Name">Stopwatch</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	State object for measuring time since an event using a reference timer.
+
+	TODO: this should not be exposed to users until it has a proper reactive API
+	surface
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- Graph
+local depend = require(Package.Graph.depend)
+local change = require(Package.Graph.change)
+-- State
+local peek = require(Package.State.peek)
+-- Utility
+local nicknames = require(Package.Utility.nicknames)
+
+export type Stopwatch = Types.StateObject&lt;number&gt; &amp; {
+	zero: (Stopwatch) -&gt; (),
+	pause: (Stopwatch) -&gt; (),
+	unpause: (Stopwatch) -&gt; ()
+}
+
+type Self = Stopwatch &amp; {
+	_measureTimeSince: number,
+	_playing: boolean,
+	_timer: Types.StateObject&lt;number&gt;
+}
+
+local class = {}
+class.type = "State"
+class.kind = "Stopwatch"
+class.timeliness = "lazy"
+
+local METATABLE = table.freeze {__index = class}
+
+local function Stopwatch(
+	scope: Types.Scope&lt;unknown&gt;,
+	timer: Types.StateObject&lt;number&gt;
+): Stopwatch
+	local createdAt = os.clock()
+	local self: Self = setmetatable(
+		{
+			awake = true,
+			createdAt = createdAt,
+			dependencySet = {},
+			dependentSet = {},
+			lastChange = nil,
+			scope = scope,
+			validity = "invalid",
+			_EXTREMELY_DANGEROUS_usedAsValue = 0,
+			_measureTimeSince = 0, -- this should be set on unpause
+			_playing = false,
+			_timer = timer
+		}, 
+		METATABLE
+	) :: any
+	local destroy = function()
+		self.scope = nil
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "Stopwatch"
+	table.insert(scope, destroy)
+
+	checkLifetime.bOutlivesA(
+		scope, self.oldestTask,
+		timer.scope, timer.oldestTask,
+		checkLifetime.formatters.parameter, "timer"
+	)
+	depend(self, timer)
+	return self
+end
+
+function class.zero(
+	self: Self
+): ()
+	local newTimepoint = peek(self._timer)
+	if newTimepoint ~= self._measureTimeSince then
+		self._measureTimeSince = newTimepoint
+		self._EXTREMELY_DANGEROUS_usedAsValue = 0
+		change(self)
+	end
+end
+
+function class.pause(
+	self: Self
+): ()
+	if self._playing == true then
+		self._playing = false
+		change(self)
+	end
+end
+
+function class.unpause(
+	self: Self
+): ()
+	if self._playing == false then
+		self._playing = true
+		self._measureTimeSince = peek(self._timer) - self._EXTREMELY_DANGEROUS_usedAsValue
+		change(self)
+	end
+end
+
+function class._evaluate(
+	self: Self
+): boolean
+	if self._playing then
+		depend(self, self._timer)
+		local currentTime = peek(self._timer)
+		local oldValue = self._EXTREMELY_DANGEROUS_usedAsValue
+		local newValue = currentTime - self._measureTimeSince
+		self._EXTREMELY_DANGEROUS_usedAsValue = newValue
+		return oldValue ~= newValue
+	else
+		return false
+	end
+	
+end
+
+table.freeze(class)
+return Stopwatch</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX13">
+          <Properties>
+            <string name="Name">Tween</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A specialised state object for following a goal state smoothly over time,
+	using a TweenInfo to shape the motion.
+
+	https://elttob.uk/Fusion/0.3/api-reference/animation/types/tween/
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- Graph
+local depend = require(Package.Graph.depend)
+local evaluate = require(Package.Graph.evaluate)
+-- State
+local castToState = require(Package.State.castToState)
+local peek = require(Package.State.peek)
+-- Animation
+local ExternalTime = require(Package.Animation.ExternalTime)
+local Stopwatch = require(Package.Animation.Stopwatch)
+local lerpType = require(Package.Animation.lerpType)
+local getTweenRatio = require(Package.Animation.getTweenRatio)
+local getTweenDuration = require(Package.Animation.getTweenDuration)
+-- Utility
+local nicknames = require(Package.Utility.nicknames)
+
+export type Self&lt;T&gt; = Types.Tween&lt;T&gt; &amp; {
+	_activeDuration: number,
+	_activeElapsed: number,
+	_activeFrom: T,
+	_activeTo: T,
+	_activeTweenInfo: TweenInfo,
+	_goal: Types.UsedAs&lt;T&gt;,
+	_stopwatch: Stopwatch.Stopwatch?,
+	_tweenInfo: Types.UsedAs&lt;TweenInfo&gt;,
+}
+
+local class = {}
+class.type = "State"
+class.kind = "Tween"
+class.timeliness = "eager"
+
+local METATABLE = table.freeze {__index = class}
+
+local function Tween&lt;T&gt;(
+	scope: Types.Scope&lt;unknown&gt;,
+	goal: Types.UsedAs&lt;T&gt;,
+	tweenInfo: Types.UsedAs&lt;TweenInfo&gt;?
+): Types.Tween&lt;T&gt;
+	local createdAt = os.clock()
+	if castToState(scope) then
+		External.logError("scopeMissing", nil, "Tweens", "myScope:Tween(goalState, tweenInfo)")
+	end
+
+	local goalState = castToState(goal)
+	local stopwatch = nil
+	if goalState ~= nil then
+		stopwatch = Stopwatch(scope, ExternalTime(scope))
+	end
+
+	local self: Self&lt;T&gt; = setmetatable(
+		{
+			createdAt = createdAt,
+			dependencySet = {},
+			dependentSet = {},
+			lastChange = nil,
+			scope = scope,
+			validity = "invalid",
+			_activeDuration = nil,
+			_activeElapsed = nil,
+			_activeFrom = nil,
+			_activeTo = nil,
+			_activeTweenInfo = nil,
+			_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
+			_goal = goal,
+			_stopwatch = stopwatch,
+			_tweenInfo = tweenInfo or TweenInfo.new()
+		},
+		METATABLE
+	) :: any
+	local destroy = function()
+		self.scope = nil
+		for dependency in pairs(self.dependencySet) do
+			dependency.dependentSet[self] = nil
+		end
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "Tween"
+	table.insert(scope, destroy)
+
+	if goalState ~= nil then
+		checkLifetime.bOutlivesA(
+			scope, self.oldestTask,
+			goalState.scope, goalState.oldestTask,
+			checkLifetime.formatters.animationGoal
+		)
+	end
+
+	local tweenInfoState = castToState(tweenInfo)
+	if tweenInfoState ~= nil then
+		checkLifetime.bOutlivesA(
+			scope, self.oldestTask,
+			tweenInfoState.scope, tweenInfoState.oldestTask,
+			checkLifetime.formatters.parameter, "tween info"
+		)
+	end
+
+	-- Eagerly evaluated objects need to evaluate themselves so that they're
+	-- valid at all times.
+	evaluate(self, true)
+
+	return self
+end
+
+function class.get&lt;T&gt;(
+	self: Self&lt;T&gt;
+): never
+	return External.logError("stateGetWasRemoved")
+end
+
+function class._evaluate&lt;T&gt;(
+	self: Self&lt;T&gt;
+): boolean
+	local goal = castToState(self._goal)
+	-- Allow non-state goals to pass through transparently.
+	if goal == nil then
+		self._EXTREMELY_DANGEROUS_usedAsValue = self._goal :: T
+		return false
+	end
+	depend(self, goal)
+	local newTweenTo = peek(goal)
+	-- Protect against NaN goals.
+	if newTweenTo ~= newTweenTo then
+		External.logWarn("tweenNanGoal")
+		return false
+	end
+	local stopwatch = self._stopwatch :: Stopwatch.Stopwatch
+	local tweenInfo = peek(self._tweenInfo) :: TweenInfo
+	-- Restart animation when the goal changes, or if the tween info changes
+	-- partway through another animation.
+	if 
+		self._activeTo ~= newTweenTo or
+		(self._activeElapsed &lt; self._activeDuration and self._activeTweenInfo ~= tweenInfo)
+	then
+		self._activeDuration = getTweenDuration(tweenInfo)
+		self._activeFrom = self._EXTREMELY_DANGEROUS_usedAsValue
+		self._activeTo = newTweenTo
+		self._activeTweenInfo = tweenInfo
+		stopwatch:zero()
+		stopwatch:unpause()
+	end
+	depend(self, stopwatch)
+	self._activeElapsed = peek(stopwatch)
+	if
+		self._activeFrom == self._activeTo or -- endpoints match
+		self._activeElapsed &gt;= self._activeDuration or -- animation is done
+		typeof(self._activeTo) ~= typeof(self._activeFrom) -- type difference
+	then
+		self._activeFrom = self._activeTo
+		self._activeElapsed = self._activeDuration
+		stopwatch:pause()
+	end
+	-- Compute actual tweened value.
+	local ratio = getTweenRatio(tweenInfo, self._activeElapsed)
+	local oldValue = self._EXTREMELY_DANGEROUS_usedAsValue
+	local newValue = lerpType(self._activeFrom, self._activeTo, ratio) :: T
+	-- Protect against NaN after motion.
+	if newValue ~= newValue then
+		External.logWarn("tweenNanMotion")
+		newValue = self._activeTo
+	end
+	-- Push update and check for similarity.
+	-- Don't need to use the similarity test here because this code doesn't
+	-- deal with tables, and NaN is already guarded against, so the similarity
+	-- test doesn't actually add any new safety here.
+	self._EXTREMELY_DANGEROUS_usedAsValue = newValue
+	return oldValue ~= newValue
+end
+
+table.freeze(class)
+return Tween :: Types.TweenConstructor
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX14">
+          <Properties>
+            <string name="Name">unpackType</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Unpacks an animatable type into an array of numbers.
+	If the type is not animatable, an empty array will be returned.
+]]
+
+local Package = script.Parent.Parent
+local Oklab = require(Package.Colour.Oklab)
+
+local function unpackType(
+	value: unknown,
+	typeString: string
+): {number}
+	if typeString == "number" then
+		local value = value :: number
+		return {value}
+
+	elseif typeString == "CFrame" then
+		local value = value :: CFrame
+		-- FUTURE: is there a better way of doing this? doing distance
+		-- calculations on `angle` may be incorrect
+		local axis, angle = value:ToAxisAngle()
+		return {value.X, value.Y, value.Z, axis.X, axis.Y, axis.Z, angle}
+
+	elseif typeString == "Color3" then
+		local value = value :: Color3
+		local lab = Oklab.fromSRGB(value)
+		return {lab.X, lab.Y, lab.Z}
+
+	elseif typeString == "ColorSequenceKeypoint" then
+		local value = value :: ColorSequenceKeypoint
+		local lab = Oklab.fromSRGB(value.Value)
+		return {lab.X, lab.Y, lab.Z, value.Time}
+
+	elseif typeString == "DateTime" then
+		local value = value :: DateTime
+		return {value.UnixTimestampMillis}
+
+	elseif typeString == "NumberRange" then
+		local value = value :: NumberRange
+		return {value.Min, value.Max}
+
+	elseif typeString == "NumberSequenceKeypoint" then
+		local value = value :: NumberSequenceKeypoint
+		return {value.Value, value.Time, value.Envelope}
+
+	elseif typeString == "PhysicalProperties" then
+		local value = value :: PhysicalProperties
+		return {value.Density, value.Friction, value.Elasticity, value.FrictionWeight, value.ElasticityWeight}
+
+	elseif typeString == "Ray" then
+		local value = value :: Ray
+		return {value.Origin.X, value.Origin.Y, value.Origin.Z, value.Direction.X, value.Direction.Y, value.Direction.Z}
+
+	elseif typeString == "Rect" then
+		local value = value :: Rect
+		return {value.Min.X, value.Min.Y, value.Max.X, value.Max.Y}
+
+	elseif typeString == "Region3" then
+		local value = value :: Region3
+		-- FUTURE: support rotated Region3s if/when they become constructable
+		return {
+			value.CFrame.X, value.CFrame.Y, value.CFrame.Z,
+			value.Size.X, value.Size.Y, value.Size.Z
+		}
+
+	elseif typeString == "Region3int16" then
+		local value = value :: Region3int16
+		return {value.Min.X, value.Min.Y, value.Min.Z, value.Max.X, value.Max.Y, value.Max.Z}
+
+	elseif typeString == "UDim" then
+		local value = value :: UDim
+		return {value.Scale, value.Offset}
+
+	elseif typeString == "UDim2" then
+		local value = value :: UDim2
+		return {value.X.Scale, value.X.Offset, value.Y.Scale, value.Y.Offset}
+
+	elseif typeString == "Vector2" then
+		local value = value :: Vector2
+		return {value.X, value.Y}
+
+	elseif typeString == "Vector2int16" then
+		local value = value :: Vector2int16
+		return {value.X, value.Y}
+
+	elseif typeString == "Vector3" then
+		local value = value :: Vector3
+		return {value.X, value.Y, value.Z}
+
+	elseif typeString == "Vector3int16" then
+		local value = value :: Vector3int16
+		return {value.X, value.Y, value.Z}
+	else
+		return {}
+	end
+end
+
+return unpackType</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="RBX15">
+        <Properties>
+          <string name="Name">Colour</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX16">
+          <Properties>
+            <string name="Name">Oklab</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Provides functions for converting Color3s into Oklab space, for more
+	perceptually uniform colour blending.
+
+	See: https://bottosson.github.io/posts/oklab/
+]]
+
+local sRGB = require(script.Parent.sRGB)
+
+local Oklab = {}
+
+-- Converts a Color3 in linear RGB space to a Vector3 in Oklab space.
+function Oklab.fromLinear(rgb: Color3): Vector3
+
+	local l = rgb.R * 0.4122214708 + rgb.G * 0.5363325363 + rgb.B * 0.0514459929
+	local m = rgb.R * 0.2119034982 + rgb.G * 0.6806995451 + rgb.B * 0.1073969566
+	local s = rgb.R * 0.0883024619 + rgb.G * 0.2817188376 + rgb.B * 0.6299787005
+
+	local lRoot = l ^ (1/3)
+	local mRoot = m ^ (1/3)
+	local sRoot = s ^ (1/3)
+
+	return Vector3.new(
+		lRoot * 0.2104542553 + mRoot * 0.7936177850 - sRoot * 0.0040720468,
+		lRoot * 1.9779984951 - mRoot * 2.4285922050 + sRoot * 0.4505937099,
+		lRoot * 0.0259040371 + mRoot * 0.7827717662 - sRoot * 0.8086757660
+	)
+end
+
+-- Converts a Color3 in sRGB space to a Vector3 in Oklab space.
+function Oklab.fromSRGB(srgb: Color3): Vector3
+	return Oklab.fromLinear(sRGB.toLinear(srgb))
+end
+
+-- Converts a Vector3 in Oklab space to a Color3 in linear RGB space.
+-- The Color3 will be clamped by default unless specified otherwise.
+function Oklab.toLinear(lab: Vector3, unclamped: boolean?): Color3
+	local lRoot = lab.X + lab.Y * 0.3963377774 + lab.Z * 0.2158037573
+	local mRoot = lab.X - lab.Y * 0.1055613458 - lab.Z * 0.0638541728
+	local sRoot = lab.X - lab.Y * 0.0894841775 - lab.Z * 1.2914855480
+
+	local l = lRoot ^ 3
+	local m = mRoot ^ 3
+	local s = sRoot ^ 3
+
+	local red = l * 4.0767416621 - m * 3.3077115913 + s * 0.2309699292
+	local green = l * -1.2684380046 + m * 2.6097574011 - s * 0.3413193965
+	local blue = l * -0.0041960863 - m * 0.7034186147 + s * 1.7076147010
+
+	if not unclamped then
+		red = math.clamp(red, 0, 1)
+		green = math.clamp(green, 0, 1)
+		blue = math.clamp(blue, 0, 1)
+	end
+
+	return Color3.new(red, green, blue)
+end
+
+-- Converts a Vector3 in Oklab space to a Color3 in sRGB space.
+-- The Color3 will be clamped by default unless specified otherwise.
+function Oklab.toSRGB(lab: Vector3, unclamped: boolean?): Color3
+	return sRGB.fromLinear(Oklab.toLinear(lab, unclamped))
+end
+
+return Oklab
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX17">
+          <Properties>
+            <string name="Name">sRGB</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+    Provides transformation functions for converting linear RGB values
+    into sRGB values.
+
+    RGB color channel transformations are outlined here:
+    https://bottosson.github.io/posts/colorwrong/#what-can-we-do%3F
+]]
+
+local sRGB = {}
+
+-- Equivalent to f_inv. Takes a linear sRGB channel and returns
+-- the sRGB channel
+local function transform(channel: number): number
+    if channel &gt;= 0.04045 then
+        return ((channel + 0.055)/(1 + 0.055))^2.4
+    else
+        return channel / 12.92
+    end
+end
+
+-- Equivalent to f. Takes an sRGB channel and returns
+-- the linear sRGB channel
+local function inverse(channel: number): number
+    if channel &gt;= 0.0031308 then
+        return (1.055) * channel^(1.0/2.4) - 0.055
+    else
+        return 12.92 * channel
+    end
+end
+
+-- Uses a tranformation to convert linear RGB into sRGB.
+function sRGB.fromLinear(rgb: Color3): Color3
+    return Color3.new(
+        transform(rgb.R),
+        transform(rgb.G),
+        transform(rgb.B)
+    )
+end
+
+-- Converts an sRGB into linear RGB using a
+-- (The inverse of sRGB.fromLinear).
+function sRGB.toLinear(srgb: Color3): Color3
+    return Color3.new(
+        inverse(srgb.R),
+        inverse(srgb.G),
+        inverse(srgb.B)
+    )
+end
+
+return sRGB</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="RBX18">
+        <Properties>
+          <string name="Name">External</string>
+          <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Abstraction layer between Fusion internals and external environments,
+	allowing for flexible integration with schedulers and test mocks.
+]]
+
+local Package = script.Parent
+local formatError = require(Package.Logging.formatError)
+local Types = require(Package.Types)
+
+local ERROR_INFO_URL = "https://elttob.uk/Fusion/0.3/api-reference/general/errors/#"
+
+local External = {}
+
+-- Indicates that a highly time-critical passage of code is running. During
+-- critical periods of a program, Fusion might decide to change some of its
+-- internal behaviour to be more performance friendly.
+local timeCritical = false
+
+-- Multiplier for running-time safety checks across the Fusion codebase. Used to
+-- stricten tests on infinite loop detection during unit testing.
+External.safetyTimerMultiplier = 1
+
+local updateStepCallbacks = {}
+local currentProvider: Types.ExternalProvider? = nil
+local lastUpdateStep = 0
+
+--[[
+	Swaps to a new provider for external operations.
+	Returns the old provider, so it can be used again later.
+]]
+function External.setExternalProvider(
+	newProvider: Types.ExternalProvider?
+): Types.ExternalProvider?
+	local oldProvider = currentProvider
+	if oldProvider ~= nil then
+		oldProvider.stopScheduler()
+	end
+	currentProvider = newProvider
+	if newProvider ~= nil then
+		newProvider.startScheduler()
+	end
+	return oldProvider
+end
+
+--[[
+	Returns true if a highly time-critical passage of code is running.
+]]
+function External.isTimeCritical(): boolean
+	return timeCritical
+end
+
+--[[
+   Sends an immediate task to the external provider. Throws if none is set.
+]]
+function External.doTaskImmediate(
+	resume: () -&gt; ()
+)
+	if currentProvider == nil then
+		External.logError("noTaskScheduler")
+	else
+		currentProvider.doTaskImmediate(resume)
+	end
+end
+
+--[[
+	Sends a deferred task to the external provider. Throws if none is set.
+]]
+function External.doTaskDeferred(
+	resume: () -&gt; ()
+)
+	if currentProvider == nil then
+		External.logError("noTaskScheduler")
+	else
+		currentProvider.doTaskDeferred(resume)
+	end
+end
+
+--[[
+	Errors in the current thread and halts execution.
+]]
+function External.logError(
+	messageID: string,
+	errObj: Types.Error?,
+	...: unknown
+): never
+	error(formatError(currentProvider, messageID, errObj, ...), 0)
+end
+
+--[[
+	Errors in a different thread to preserve the flow of execution.
+]]
+function External.logErrorNonFatal(
+	messageID: string,
+	errObj: Types.Error?,
+	...: unknown
+): ()
+	local errorString = formatError(currentProvider, messageID, errObj, ...)
+	if currentProvider ~= nil then
+		currentProvider.logErrorNonFatal(errorString)
+	else
+		print(errorString)
+	end
+end
+
+--[[
+	Shows a warning message in the output.
+]]
+function External.logWarn(
+	messageID: string,
+	...: unknown
+): ()
+	local errorString = formatError(currentProvider, messageID, debug.traceback(nil, 2), ...)
+	if currentProvider ~= nil then
+		currentProvider.logWarn(errorString)
+	else
+		print(errorString)
+	end
+end
+
+--[[
+	Registers a callback to the update step of the external provider.
+	Returns a function that can be used to disconnect later.
+
+	Callbacks are given the current number of seconds since an arbitrary epoch.
+	
+	TODO: This epoch may change between providers. We could investigate ways
+	of allowing providers to co-operate to keep the epoch the same, so that
+	monotonicity can be better preserved.
+]]
+function External.bindToUpdateStep(
+	callback: (
+		now: number
+	) -&gt; ()
+): () -&gt; ()
+	local uniqueIdentifier = {}
+	updateStepCallbacks[uniqueIdentifier] = callback
+	return function()
+		updateStepCallbacks[uniqueIdentifier] = nil
+	end
+end
+
+--[[
+	Steps time-dependent systems with the current number of seconds since an
+	arbitrary epoch. This should be called as early as possible in the external
+	provider's update cycle.
+]]
+function External.performUpdateStep(
+	now: number
+)
+	lastUpdateStep = now
+	for _, callback in updateStepCallbacks do
+		callback(now)
+	end
+end
+
+--[[
+	Returns the timestamp of the last update step.
+]]
+function External.lastUpdateStep()
+	return lastUpdateStep
+end
+
+return External</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="RBX19">
+        <Properties>
+          <string name="Name">ExternalDebug</string>
+          <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Abstraction layer between Fusion internals and external debuggers, allowing
+	for deep introspection using function hooks.
+
+	Unlike `External`, attaching a debugger is optional, and all debugger
+	functions are expected to be infallible and non-blocking.
+]]
+
+local Package = script.Parent
+local Types = require(Package.Types)
+
+local currentProvider: Types.ExternalDebugger? = nil
+local lastUpdateStep = 0
+
+local Debugger = {}
+
+--[[
+	Swaps to a new debugger.
+	Returns the old debugger, so it can be used again later.
+]]
+function Debugger.setDebugger(
+	newProvider: Types.ExternalDebugger?
+): Types.ExternalDebugger?
+	local oldProvider = currentProvider
+	if oldProvider ~= nil then
+		oldProvider.stopDebugging()
+	end
+	currentProvider = newProvider
+	if newProvider ~= nil then
+		newProvider.startDebugging()
+	end
+	return oldProvider
+end
+
+--[[
+	Called at the earliest moment after a scope is created or removed from the
+	scope pool, but not before the scope has finished being prepared by the
+	library, so that debuggers can register its existence and track changes
+	to the scope over time.
+]]
+function Debugger.trackScope(
+	scope: Types.Scope&lt;unknown&gt;
+): ()
+	if currentProvider == nil then
+		return
+	end
+	currentProvider.trackScope(scope)
+end
+
+--[[
+	Called at the final moment before a scope is poisoned or added to the scope
+	pool, after all cleanup tasks have completed, so that debuggers can erase 
+	the scope from internal trackers. Note that, due to scope pooling and user
+	code, never assume that this correlates with garbage collection events.
+]]
+function Debugger.untrackScope(
+	scope: Types.Scope&lt;unknown&gt;
+): ()
+	if currentProvider == nil then
+		return
+	end
+	currentProvider.trackScope(scope)
+end
+
+return Debugger</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="RBX20">
+        <Properties>
+          <string name="Name">Graph</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX21">
+          <Properties>
+            <string name="Name">castToGraph</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Returns the input *only* if it is a graph object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+
+local function castToGraph(
+	target: any
+): Types.GraphObject?
+	if 
+		typeof(target) == "table" and
+		typeof(target.validity) == "string" and
+		typeof(target.timeliness) == "string" and
+		typeof(target.dependencySet) == "table" and
+		typeof(target.dependentSet) == "table"
+	then
+		return target
+	else
+		return nil
+	end
+end
+
+return castToGraph</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX22">
+          <Properties>
+            <string name="Name">change</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Prompts a graph object to re-evaluate its own value. If it meaningfully
+	changes, then dependents will have to re-evaluate their own values in the
+	future.
+
+	https://fluff.blog/2024/04/16/monotonic-painting.html
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local evaluate = require(Package.Graph.evaluate)
+
+-- How long should this function run before it's considered to be in an infinite
+-- cycle and error out?
+local TERMINATION_TIME = 1
+
+local function change(
+	target: Types.GraphObject
+): ()
+	if target.validity == "busy" then
+		return External.logError("infiniteLoop")
+	end
+
+	local meaningfullyChanged = evaluate(target, true)
+	if not meaningfullyChanged then
+		return
+	end
+
+	local searchInNow: {Types.GraphObject} = {}
+	local searchInNext: {Types.GraphObject} = {}
+	local invalidateList: {Types.GraphObject} = {}
+
+	searchInNow[1] = target
+	local terminateBy = os.clock() + TERMINATION_TIME * External.safetyTimerMultiplier
+	repeat
+		if os.clock() &gt; terminateBy then
+			return External.logError("infiniteLoop")
+		end
+		local done = true
+		for _, searchTarget in searchInNow do
+			for dependent in searchTarget.dependentSet do
+				if dependent.validity == "valid" then
+					done = false
+					table.insert(invalidateList, dependent)
+					table.insert(searchInNext, dependent)
+				elseif dependent.validity == "busy" then
+					return External.logError("infiniteLoop")
+				end
+			end
+		end
+		searchInNow, searchInNext = searchInNext, searchInNow
+		table.clear(searchInNext)
+	until done
+
+	local eagerList: {Types.GraphObject} = {}
+
+	for _, invalidateTarget in invalidateList do
+		invalidateTarget.validity = "invalid"
+		if invalidateTarget.timeliness == "eager" then
+			table.insert(eagerList, invalidateTarget)
+		end
+	end
+	-- If objects are not executed in order of creations, then dynamic graphs
+	-- may experience 'glitches' where nested graph objects see intermediate
+	-- values before being destroyed.
+	-- https://fluff.blog/2024/07/14/glitches-in-dynamic-reactive-graphs.html
+	table.sort(eagerList, function(a, b)
+		return a.createdAt &lt; b.createdAt
+	end)
+	for _, eagerTarget in eagerList do
+		evaluate(eagerTarget, false)
+	end
+end
+
+return change</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX23">
+          <Properties>
+            <string name="Name">depend</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Forms a dependency on a graph object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local evaluate = require(Package.Graph.evaluate)
+local nameOf = require(Package.Utility.nameOf)
+
+local function depend&lt;T&gt;(
+	dependent: Types.GraphObject,
+	dependency: Types.GraphObject
+): ()
+	-- Ensure dependencies are evaluated and up-to-date
+	-- when they are depended on. Also, newly created objects
+	-- might not have any transitive dependencies captured yet,
+	-- so ensure that they're present.
+	evaluate(dependency, false)
+
+	if table.isfrozen(dependent.dependencySet) or table.isfrozen(dependency.dependentSet) then
+		External.logError("cannotDepend", nil, nameOf(dependent, "Dependent"), nameOf(dependency, "dependency"))
+	end
+	dependency.dependentSet[dependent] = true
+	dependent.dependencySet[dependency] = true
+end
+
+return depend</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX24">
+          <Properties>
+            <string name="Name">evaluate</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Evaluates the graph object if necessary, so that it is up to date.
+	Returns true if it meaningfully changed.
+
+	https://fluff.blog/2024/04/16/monotonic-painting.html
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+
+local function evaluate(
+	target: Types.GraphObject,
+	forceComputation: boolean
+): boolean
+	if target.validity == "busy" then
+		return External.logError("infiniteLoop")
+	end
+	local firstEvaluation = target.lastChange == nil
+	local isInvalid = target.validity == "invalid"
+	if firstEvaluation or isInvalid or forceComputation then
+		local needsComputation = firstEvaluation or forceComputation
+		if not needsComputation then
+			for dependency in target.dependencySet do
+				evaluate(dependency, false)
+				if dependency.lastChange &gt; target.lastChange then
+					needsComputation = true
+					break
+				end
+			end
+		end
+		local targetMeaningfullyChanged = false
+		if needsComputation then
+			for dependency in target.dependencySet do
+				dependency.dependentSet[target] = nil
+				target.dependencySet[dependency] = nil
+			end
+			target.validity = "busy"
+			targetMeaningfullyChanged = target:_evaluate() or firstEvaluation
+		end
+		if targetMeaningfullyChanged then
+			target.lastChange = os.clock()
+		end
+		target.validity = "valid"
+		return targetMeaningfullyChanged
+	else
+		return false
+	end
+end
+
+return evaluate</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX25">
+          <Properties>
+            <string name="Name">Observer</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A graph object that runs user code when it's updated by the reactive graph.
+
+	http://elttob.uk/Fusion/0.3/api-reference/state/types/observer/
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- Graph
+local castToGraph = require(Package.Graph.castToGraph)
+local depend = require(Package.Graph.depend)
+local evaluate = require(Package.Graph.evaluate)
+-- Utility
+local nicknames = require(Package.Utility.nicknames)
+
+type Self = Types.Observer &amp; {
+	_watchingGraph: Types.GraphObject?,
+	_changeListeners: {[unknown]: () -&gt; ()}
+}
+
+local class = {}
+class.type = "Observer"
+class.timeliness = "eager"
+class.dependentSet = table.freeze {}
+
+local METATABLE = table.freeze {__index = class}
+
+local function Observer(
+	scope: Types.Scope&lt;unknown&gt;,
+	watching: unknown
+): Types.Observer
+	local createdAt = os.clock()
+	if watching == nil then
+		External.logError("scopeMissing", nil, "Observers", "myScope:Observer(watching)")
+	end
+
+	local self: Self = setmetatable(
+		{
+			scope = scope,
+			createdAt = createdAt,
+			dependencySet = {},
+			lastChange = nil,
+			validity = "invalid",
+			_watchingGraph = castToGraph(watching),
+			_changeListeners = {}
+		},
+		METATABLE
+	) :: any
+	local destroy = function()
+		self.scope = nil
+		for dependency in pairs(self.dependencySet) do
+			dependency.dependentSet[self] = nil
+		end
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "Observer"
+	table.insert(scope, destroy)
+
+	if self._watchingGraph ~= nil then
+		checkLifetime.bOutlivesA(
+			scope, self.oldestTask,
+			self._watchingGraph.scope, self._watchingGraph.oldestTask,
+			checkLifetime.formatters.observer
+		)
+	end
+
+	-- Eagerly evaluated objects need to evaluate themselves so that they're
+	-- valid at all times.
+	evaluate(self, true)
+
+	return self
+end
+
+function class.onBind(
+	self: Self,
+	callback: () -&gt; ()
+): () -&gt; ()
+	External.doTaskImmediate(callback)
+	return self:onChange(callback)
+end
+
+function class.onChange(
+	self: Self,
+	callback: () -&gt; ()
+): () -&gt; ()
+	local uniqueIdentifier = table.freeze {}
+	self._changeListeners[uniqueIdentifier] = callback
+	return function()
+		self._changeListeners[uniqueIdentifier] = nil
+	end
+end
+
+function class._evaluate(
+	self: Self
+): ()
+	if self._watchingGraph ~= nil then
+		depend(self, self._watchingGraph)
+	end
+	for _, callback in self._changeListeners do
+		External.doTaskImmediate(callback)
+	end
+	return true
+end
+
+table.freeze(class)
+return Observer :: Types.ObserverConstructor</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="RBX26">
+        <Properties>
+          <string name="Name">Instances</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX27">
+          <Properties>
+            <string name="Name">applyInstanceProps</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Applies a table of properties to an instance, including binding to any
+	given state objects and applying any special keys.
+
+	No strong reference is kept by default - special keys should take care not
+	to accidentally hold strong references to instances forever.
+
+	If a key is used twice, an error will be thrown. This is done to avoid
+	double assignments or double bindings. However, some special keys may want
+	to enable such assignments - in which case unique keys should be used for
+	each occurence.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Logging
+local parseError = require(Package.Logging.parseError)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- Graph
+local Observer = require(Package.Graph.Observer)
+-- State
+local castToState = require(Package.State.castToState)
+local peek = require(Package.State.peek)
+-- Utility
+local xtypeof = require(Package.Utility.xtypeof)
+
+local function setProperty_unsafe(
+	instance: Instance,
+	property: string,
+	value: unknown
+)
+	(instance :: any)[property] = value
+end
+
+local function testPropertyAssignable(
+	instance: Instance,
+	property: string
+)
+	(instance :: any)[property] = (instance :: any)[property]
+end
+
+local function setProperty(
+	instance: Instance,
+	property: string,
+	value: unknown
+)
+	local success, err = xpcall(setProperty_unsafe :: any, parseError, instance, property, value)
+
+	if not success then
+		if not pcall(testPropertyAssignable, instance, property) then
+			External.logErrorNonFatal("cannotAssignProperty", nil, instance.ClassName, property)
+		else
+			-- property is assignable, but this specific assignment failed
+			-- this typically implies the wrong type was received
+			local givenType = typeof(value)
+			local expectedType = typeof((instance :: any)[property])
+
+			if givenType == expectedType then
+				External.logErrorNonFatal("propertySetError", err)
+			else
+				External.logErrorNonFatal("invalidPropertyType", nil, instance.ClassName, property, expectedType, givenType)
+			end
+		end
+	end
+end
+
+local function bindProperty(
+	scope: Types.Scope&lt;unknown&gt;,
+	instance: Instance,
+	property: string,
+	value: Types.UsedAs&lt;unknown&gt;
+)
+	if castToState(value) then
+		local value = value :: Types.StateObject&lt;unknown&gt;
+		checkLifetime.bOutlivesA(
+			scope, instance,
+			value.scope, value.oldestTask,
+			checkLifetime.formatters.boundProperty, property
+		)
+		-- value is a state object - bind to changes
+		Observer(scope, value :: any):onBind(function()
+			setProperty(instance, property, peek(value))
+		end)
+	else
+		-- value is a constant - assign once only
+		setProperty(instance, property, value)
+	end
+end
+
+local function applyInstanceProps(
+	scope: Types.Scope&lt;unknown&gt;,
+	props: Types.PropertyTable,
+	applyTo: Instance
+)
+	local specialKeys = {
+		self = {} :: {[Types.SpecialKey]: unknown},
+		descendants = {} :: {[Types.SpecialKey]: unknown},
+		ancestor = {} :: {[Types.SpecialKey]: unknown},
+		observer = {} :: {[Types.SpecialKey]: unknown}
+	}
+
+	for key, value in pairs(props) do
+		local keyType = xtypeof(key)
+
+		if keyType == "string" then
+			if key ~= "Parent" then
+				bindProperty(scope, applyTo, key :: string, value)
+			end
+		elseif keyType == "SpecialKey" then
+			local stage = (key :: Types.SpecialKey).stage
+			local keys = specialKeys[stage]
+			if keys == nil then
+				External.logError("unrecognisedPropertyStage", nil, stage)
+			else
+				keys[key] = value
+			end
+		else
+			-- we don't recognise what this key is supposed to be
+			External.logError("unrecognisedPropertyKey", nil, keyType)
+		end
+	end
+
+	for key, value in pairs(specialKeys.self) do
+		key:apply(scope, value, applyTo)
+	end
+	for key, value in pairs(specialKeys.descendants) do
+		key:apply(scope, value, applyTo)
+	end
+
+	if props.Parent ~= nil then
+		bindProperty(scope, applyTo, "Parent", props.Parent)
+	end
+
+	for key, value in pairs(specialKeys.ancestor) do
+		key:apply(scope, value, applyTo)
+	end
+	for key, value in pairs(specialKeys.observer) do
+		key:apply(scope, value, applyTo)
+	end
+end
+
+return applyInstanceProps</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX28">
+          <Properties>
+            <string name="Name">Attribute</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A special key for property tables, which allows users to apply custom
+	attributes to instances
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- Graph
+local Observer = require(Package.Graph.Observer)
+-- State
+local castToState = require(Package.State.castToState)
+local peek = require(Package.State.peek)
+
+local keyCache: {[string]: Types.SpecialKey} = {}
+
+local function Attribute(
+	attributeName: string
+): Types.SpecialKey
+	local key = keyCache[attributeName]
+	if key == nil then
+		key = {
+			type = "SpecialKey",
+			kind = "Attribute",
+			stage = "self",
+			apply = function(
+				self: Types.SpecialKey,
+				scope: Types.Scope&lt;unknown&gt;,
+				value: unknown,
+				applyTo: Instance
+			)
+				if castToState(value) then
+					local value = value :: Types.StateObject&lt;unknown&gt;
+					checkLifetime.bOutlivesA(
+						scope, applyTo,
+						value.scope, value.oldestTask,
+						checkLifetime.formatters.boundAttribute, attributeName
+					)
+					Observer(scope, value :: any):onBind(function()
+						applyTo:SetAttribute(attributeName, peek(value))
+					end)
+				else
+					applyTo:SetAttribute(attributeName, value)
+				end
+			end
+		}
+		keyCache[attributeName] = key
+	end
+	return key
+end
+
+return Attribute</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX29">
+          <Properties>
+            <string name="Name">AttributeChange</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A special key for property tables, which allows users to connect to
+	an attribute change on an instance.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+
+local keyCache: {[string]: Types.SpecialKey} = {}
+
+local function AttributeChange(
+	attributeName: string
+): Types.SpecialKey
+	local key = keyCache[attributeName]
+	if key == nil then
+		key = {
+			type = "SpecialKey",
+			kind = "AttributeChange",
+			stage = "observer",
+			apply = function(
+				self: Types.SpecialKey,
+				scope: Types.Scope&lt;unknown&gt;,
+				value: unknown,
+				applyTo: Instance
+			)
+				if typeof(value) ~= "function" then
+					External.logError("invalidAttributeChangeHandler", nil, attributeName)
+				end
+				local value = value :: (...unknown) -&gt; (...unknown)
+				local event = applyTo:GetAttributeChangedSignal(attributeName)
+				table.insert(scope, event:Connect(function()
+					value((applyTo :: any):GetAttribute(attributeName))
+				end))
+			end
+		}
+		keyCache[attributeName] = key
+	end
+	return key
+end
+
+return AttributeChange</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX30">
+          <Properties>
+            <string name="Name">AttributeOut</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A special key for property tables, which allows users to save instance attributes
+	into state objects
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- State
+local castToState = require(Package.State.castToState)
+
+local keyCache: {[string]: Types.SpecialKey} = {}
+
+local function AttributeOut(
+	attributeName: string
+): Types.SpecialKey
+	local key = keyCache[attributeName]
+	if key == nil then
+		key = {
+			type = "SpecialKey",
+			kind = "AttributeOut",
+			stage = "observer",
+			apply = function(
+				self: Types.SpecialKey,
+				scope: Types.Scope&lt;unknown&gt;,
+				value: unknown,
+				applyTo: Instance
+			)
+				local event = applyTo:GetAttributeChangedSignal(attributeName)
+	
+				if not castToState(value) then
+					External.logError("invalidAttributeOutType")
+				end
+				local value = value :: Types.StateObject&lt;unknown&gt;
+				if value.kind ~= "Value" then
+					External.logError("invalidAttributeOutType")
+				end
+				local value = value :: Types.Value&lt;unknown&gt;
+				checkLifetime.bOutlivesA(
+					scope, applyTo,
+					value.scope, value.oldestTask,
+					checkLifetime.formatters.attributeOutputsTo, attributeName
+				)
+
+				value:set((applyTo :: any):GetAttribute(attributeName))
+				table.insert(scope, event:Connect(function()	
+					value:set((applyTo :: any):GetAttribute(attributeName))
+				end))
+			end
+		}
+		keyCache[attributeName] = key
+	end
+	return key
+end
+
+return AttributeOut
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX31">
+          <Properties>
+            <string name="Name">Child</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Helper function for type checking purposes. Casts the input to a `Child`
+	type, while constraining the input to be an array of `Child` - this prevents
+	Luau from erroneously inferring a different array type for the input.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+
+local function Child(
+	x: {Types.Child}
+): Types.Child
+	return x
+end
+
+return Child
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX32">
+          <Properties>
+            <string name="Name">Children</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A special key for property tables, which parents any given descendants into
+	an instance.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local Observer = require(Package.Graph.Observer)
+local peek = require(Package.State.peek)
+local castToState = require(Package.State.castToState)
+local doCleanup = require(Package.Memory.doCleanup)
+
+type Set&lt;T&gt; = {[T]: unknown}
+
+-- Experimental flag: name children based on the key used in the [Children] table
+local EXPERIMENTAL_AUTO_NAMING = false
+
+return {
+	type = "SpecialKey",
+	kind = "Children",
+	stage = "descendants",
+	apply = function(
+		self: Types.SpecialKey,
+		scope: Types.Scope&lt;unknown&gt;,
+		value: unknown,
+		applyTo: Instance
+	)
+		local newParented: Set&lt;Instance&gt; = {}
+		local oldParented: Set&lt;Instance&gt; = {}
+	
+		-- save scopes for state object observers
+		local newScopes: {[Types.StateObject&lt;unknown&gt;]: Types.Scope&lt;unknown&gt;} = {}
+		local oldScopes: {[Types.StateObject&lt;unknown&gt;]: Types.Scope&lt;unknown&gt;} = {}
+	
+		-- Rescans this key's value to find new instances to parent and state objects
+		-- to observe for changes; then unparents instances no longer found and
+		-- disconnects observers for state objects no longer present.
+		local function updateChildren()
+			oldParented, newParented = newParented, oldParented
+			oldScopes, newScopes = newScopes, oldScopes
+	
+			local function processChild(
+				child: unknown,
+				autoName: string?
+			)
+				local childType = typeof(child)
+	
+				if childType == "Instance" then
+					-- case 1; single instance
+					local child = child :: Instance
+	
+					newParented[child] = true
+					if oldParented[child] == nil then
+						-- wasn't previously present
+	
+						-- TODO: check for ancestry conflicts here
+						child.Parent = applyTo
+					else
+						-- previously here; we want to reuse, so remove from old
+						-- set so we don't encounter it during unparenting
+						oldParented[child] = nil
+					end
+	
+					if EXPERIMENTAL_AUTO_NAMING and autoName ~= nil then
+						child.Name = autoName
+					end
+	
+				elseif castToState(child) then
+					-- case 2; state object
+					local child = child :: Types.StateObject&lt;unknown&gt;
+	
+					local value = peek(child)
+					-- allow nil to represent the absence of a child
+					if value ~= nil then
+						processChild(value, autoName)
+					end
+	
+					local childScope = oldScopes[child]
+					if childScope == nil then
+						-- wasn't previously present
+						childScope = {}
+						Observer(childScope, child):onChange(updateChildren)
+					else
+						-- previously here; we want to reuse, so remove from old
+						-- set so we don't encounter it during unparenting
+						oldScopes[child] = nil
+					end
+	
+					newScopes[child] = childScope
+	
+				elseif childType == "table" then
+					-- case 3; table of objects
+					local child = child :: {[unknown]: unknown}
+	
+					for key, subChild in pairs(child) do
+						local keyType = typeof(key)
+						local subAutoName: string? = nil
+	
+						if keyType == "string" then
+							local key = key :: string
+							subAutoName = key
+						elseif keyType == "number" and autoName ~= nil then
+							local key = key :: number
+							subAutoName = autoName .. "_" .. key
+						end
+	
+						processChild(subChild, subAutoName)
+					end
+	
+				else
+					External.logWarn("unrecognisedChildType", childType)
+				end
+			end
+	
+			if value ~= nil then
+				-- `propValue` is set to nil on cleanup, so we don't process children
+				-- in that case
+				processChild(value)
+			end
+	
+			-- unparent any children that are no longer present
+			for oldInstance in pairs(oldParented) do
+				oldInstance.Parent = nil
+			end
+			table.clear(oldParented)
+	
+			-- disconnect observers which weren't reused
+			for oldState, childScope in pairs(oldScopes) do
+				doCleanup(childScope)
+			end
+			table.clear(oldScopes)
+		end
+	
+		table.insert(scope, function()
+			value = nil
+			updateChildren()
+		end)
+	
+		-- perform initial child parenting
+		updateChildren()
+	end
+} :: Types.SpecialKey</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX33">
+          <Properties>
+            <string name="Name">defaultProps</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Stores 'sensible default' properties to be applied to instances created by
+	the New function.
+]]
+
+return {
+	ScreenGui = {
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	},
+
+	BillboardGui = {
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		Active = true
+	},
+
+	SurfaceGui = {
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+
+		SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud,
+		PixelsPerStud = 50
+	},
+
+	Frame = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0
+	},
+
+	ScrollingFrame = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+
+		ScrollBarImageColor3 = Color3.new(0, 0, 0)
+	},
+
+	TextLabel = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+
+		Font = Enum.Font.SourceSans,
+		Text = "",
+		TextColor3 = Color3.new(0, 0, 0),
+		TextSize = 14
+	},
+
+	TextButton = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+
+		AutoButtonColor = false,
+
+		Font = Enum.Font.SourceSans,
+		Text = "",
+		TextColor3 = Color3.new(0, 0, 0),
+		TextSize = 14
+	},
+
+	TextBox = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+
+		ClearTextOnFocus = false,
+
+		Font = Enum.Font.SourceSans,
+		Text = "",
+		TextColor3 = Color3.new(0, 0, 0),
+		TextSize = 14
+	},
+
+	ImageLabel = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0
+	},
+
+	ImageButton = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0,
+
+		AutoButtonColor = false
+	},
+
+	ViewportFrame = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0
+	},
+
+	VideoFrame = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0
+	},
+	
+	CanvasGroup = {
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderColor3 = Color3.new(0, 0, 0),
+		BorderSizePixel = 0
+	},
+
+	SpawnLocation = {
+		Duration = 0
+	},
+
+	BoxHandleAdornment = {
+		ZIndex = 0
+	},
+	ConeHandleAdornment = {
+		ZIndex = 0
+	},
+	CylinderHandleAdornment = {
+		ZIndex = 0
+	},
+	ImageHandleAdornment = {
+		ZIndex = 0
+	},
+	LineHandleAdornment = {
+		ZIndex = 0
+	},
+	SphereHandleAdornment = {
+		ZIndex = 0
+	},
+	WireframeHandleAdornment = {
+		ZIndex = 0
+	},
+	
+	Part = {
+		Anchored = true,
+		Size = Vector3.one,
+		FrontSurface = Enum.SurfaceType.Smooth,
+		BackSurface = Enum.SurfaceType.Smooth,
+		LeftSurface = Enum.SurfaceType.Smooth,
+		RightSurface = Enum.SurfaceType.Smooth,
+		TopSurface = Enum.SurfaceType.Smooth,
+		BottomSurface = Enum.SurfaceType.Smooth,
+	},
+	
+	TrussPart = {
+		Anchored = true,
+		Size = Vector3.one * 2,
+		FrontSurface = Enum.SurfaceType.Smooth,
+		BackSurface = Enum.SurfaceType.Smooth,
+		LeftSurface = Enum.SurfaceType.Smooth,
+		RightSurface = Enum.SurfaceType.Smooth,
+		TopSurface = Enum.SurfaceType.Smooth,
+		BottomSurface = Enum.SurfaceType.Smooth,
+	},
+
+	MeshPart = {
+		Anchored = true,
+		Size = Vector3.one,
+		FrontSurface = Enum.SurfaceType.Smooth,
+		BackSurface = Enum.SurfaceType.Smooth,
+		LeftSurface = Enum.SurfaceType.Smooth,
+		RightSurface = Enum.SurfaceType.Smooth,
+		TopSurface = Enum.SurfaceType.Smooth,
+		BottomSurface = Enum.SurfaceType.Smooth,
+	},
+
+	CornerWedgePart = {
+		Anchored = true,
+		Size = Vector3.one,
+		FrontSurface = Enum.SurfaceType.Smooth,
+		BackSurface = Enum.SurfaceType.Smooth,
+		LeftSurface = Enum.SurfaceType.Smooth,
+		RightSurface = Enum.SurfaceType.Smooth,
+		TopSurface = Enum.SurfaceType.Smooth,
+		BottomSurface = Enum.SurfaceType.Smooth,
+	},
+
+	VehicleSeat = {
+		Anchored = true,
+		Size = Vector3.one,
+		FrontSurface = Enum.SurfaceType.Smooth,
+		BackSurface = Enum.SurfaceType.Smooth,
+		LeftSurface = Enum.SurfaceType.Smooth,
+		RightSurface = Enum.SurfaceType.Smooth,
+		TopSurface = Enum.SurfaceType.Smooth,
+		BottomSurface = Enum.SurfaceType.Smooth,
+	},
+}
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX34">
+          <Properties>
+            <string name="Name">Hydrate</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Processes and returns an existing instance, with options for setting
+	properties, event handlers and other attributes on the instance.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local applyInstanceProps = require(Package.Instances.applyInstanceProps)
+
+local function Hydrate(
+	scope: Types.Scope&lt;unknown&gt;,
+	target: Instance
+)
+	if target :: any == nil then
+		External.logError("scopeMissing", nil, "instances using Hydrate", "myScope:Hydrate (instance) { ... }")
+	end
+	return function(
+		props: Types.PropertyTable
+	): Instance
+	
+		table.insert(scope, target)
+		applyInstanceProps(scope, props, target)
+		return target
+	end
+end
+
+return Hydrate</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX35">
+          <Properties>
+            <string name="Name">New</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Constructs and returns a new instance, with options for setting properties,
+	event handlers and other attributes on the instance right away.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local defaultProps = require(Package.Instances.defaultProps)
+local applyInstanceProps = require(Package.Instances.applyInstanceProps)
+
+type Component = (Types.PropertyTable) -&gt; Instance
+
+local function New(
+	scope: Types.Scope&lt;unknown&gt;,
+	className: string
+)
+	if (className :: any) == nil then
+		local scope = (scope :: any) :: string
+		External.logError("scopeMissing", nil, "instances using New", "myScope:New \"" .. scope .. "\" { ... }")
+	end
+
+	-- This might look appealing to try and cache. But please don't. The scope
+	-- upvalue is shared between the two curried function calls, so this will
+	-- open incredible cross-codebase wormholes like you've never seen before.
+	return function(
+		props: Types.PropertyTable
+	): Instance
+		local ok, instance = pcall(Instance.new, className)
+		if not ok then
+			External.logError("cannotCreateClass", nil, className)
+		end
+
+		local classDefaults = defaultProps[className]
+		if classDefaults ~= nil then
+			for defaultProp, defaultValue in pairs(classDefaults) do
+				(instance :: any)[defaultProp] = defaultValue
+			end
+		end
+
+		table.insert(scope, instance)
+		applyInstanceProps(scope, props, instance)
+
+		return instance
+	end
+end
+
+return New</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX36">
+          <Properties>
+            <string name="Name">OnChange</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Constructs special keys for property tables which connect property change
+	listeners to an instance.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+
+local keyCache: {[string]: Types.SpecialKey} = {}
+
+local function OnChange(
+	propertyName: string
+): Types.SpecialKey
+	local key = keyCache[propertyName]
+	if key == nil then
+		key = {
+			type = "SpecialKey",
+			kind = "OnChange",
+			stage = "observer",
+			apply = function(
+				self: Types.SpecialKey,
+				scope: Types.Scope&lt;unknown&gt;,
+				callback: unknown,
+				applyTo: Instance
+			)
+				local ok, event = pcall(applyTo.GetPropertyChangedSignal, applyTo, propertyName)
+				if not ok then
+					External.logError("cannotConnectChange", nil, applyTo.ClassName, propertyName)
+				elseif typeof(callback) ~= "function" then
+					External.logError("invalidChangeHandler", nil, propertyName)
+				else
+					local callback = callback :: (...unknown) -&gt; (...unknown)
+					table.insert(scope, event:Connect(function()
+						callback((applyTo :: any)[propertyName])
+					end))
+				end
+			end
+		}
+		keyCache[propertyName] = key
+	end
+	return key
+end
+
+return OnChange</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX37">
+          <Properties>
+            <string name="Name">OnEvent</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Constructs special keys for property tables which connect event listeners to
+	an instance.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+
+local keyCache: {[string]: Types.SpecialKey} = {}
+
+local function getProperty_unsafe(
+	instance: Instance,
+	property: string
+)
+	return (instance :: any)[property]
+end
+
+local function OnEvent(
+	eventName: string
+): Types.SpecialKey
+	local key = keyCache[eventName]
+	if key == nil then
+		key = {
+			type = "SpecialKey",
+			kind = "OnEvent",
+			stage = "observer",
+			apply = function(
+				self: Types.SpecialKey,
+				scope: Types.Scope&lt;unknown&gt;,
+				callback: unknown,
+				applyTo: Instance
+			)
+				local ok, event = pcall(getProperty_unsafe, applyTo, eventName)
+				if not ok or typeof(event) ~= "RBXScriptSignal" then
+					External.logError("cannotConnectEvent", nil, applyTo.ClassName, eventName)
+				elseif typeof(callback) ~= "function" then
+					External.logError("invalidEventHandler", nil, eventName)
+				else
+					table.insert(scope, event:Connect(callback :: any))
+				end
+			end
+		}
+		keyCache[eventName] = key
+	end
+	return key
+end
+
+return OnEvent</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX38">
+          <Properties>
+            <string name="Name">Out</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A special key for property tables, which allows users to extract values from
+	an instance into an automatically-updated Value object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Memory
+local checkLifetime = require(Package.Memory.checkLifetime)
+-- State
+local castToState = require(Package.State.castToState)
+
+local keyCache: {[string]: Types.SpecialKey} = {}
+
+local function Out(
+	propertyName: string
+): Types.SpecialKey
+	local key = keyCache[propertyName]
+	if key == nil then
+		key = {
+			type = "SpecialKey",
+			kind = "Out",
+			stage = "observer",
+			apply = function(
+				self: Types.SpecialKey,
+				scope: Types.Scope&lt;unknown&gt;,
+				value: unknown,
+				applyTo: Instance
+			)
+				local ok, event = pcall(applyTo.GetPropertyChangedSignal, applyTo, propertyName)
+				if not ok then
+					External.logError("invalidOutProperty", nil, applyTo.ClassName, propertyName)
+				end
+	
+				if not castToState(value) then
+					External.logError("invalidOutType")
+				end
+				local value = value :: Types.StateObject&lt;unknown&gt;
+				if value.kind ~= "Value" then
+					External.logError("invalidOutType")
+				end
+				local value = value :: Types.Value&lt;unknown&gt;
+				checkLifetime.bOutlivesA(
+					scope, applyTo, 
+					value.scope, value.oldestTask,
+					checkLifetime.formatters.propertyOutputsTo, propertyName
+				)
+
+				value:set((applyTo :: any)[propertyName])
+				table.insert(
+					scope,
+					event:Connect(function()
+						value:set((applyTo :: any)[propertyName])
+					end)
+				)
+			end
+		}
+		keyCache[propertyName] = key
+	end
+	return key
+end
+
+return Out
+</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="RBX39">
+        <Properties>
+          <string name="Name">Logging</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX40">
+          <Properties>
+            <string name="Name">formatError</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Formats a Fusion-specific error message.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local messages = require(Package.Logging.messages)
+
+local ERROR_INFO_URL = "https://elttob.uk/Fusion/0.3/api-reference/general/errors/#"
+
+local function formatError(
+	externalProvider: Types.ExternalProvider?,
+	messageID: string,
+	errorOrTrace: Types.Error | string | nil,
+	...: unknown
+): string
+	local originalMessageID = messageID
+	local error: Types.Error? = if typeof(errorOrTrace) == "table" then errorOrTrace else nil
+	local trace: string? = if typeof(errorOrTrace) == "table" then errorOrTrace.trace else errorOrTrace
+	local messageText = messages[messageID]
+	if messageText == nil then
+		messageID = "unknownMessage"
+		messageText = messages[messageID]
+	end
+	messageText = messageText:format(...)
+	if error ~= nil then
+		messageText = messageText:gsub("ERROR_MESSAGE", error.message)
+		if error.context ~= nil then
+			messageText ..= ` ({error.context})`
+		end
+	else
+		messageText = messageText:gsub("ERROR_MESSAGE", originalMessageID)
+	end
+	messageText = `[Fusion] {messageText} \nID: {messageID}`
+	if externalProvider ~= nil and externalProvider.policies.allowWebLinks then
+		messageText ..= `\nLearn more: {ERROR_INFO_URL}{messageID:lower()}`
+	end
+	if trace ~= nil then
+		messageText ..= ` \n---- Stack trace ----\n{trace}`
+	end
+	return messageText:gsub("\n", "\n    ")
+end
+
+return formatError</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX41">
+          <Properties>
+            <string name="Name">messages</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Stores templates for different kinds of logging messages.
+]]
+
+return {
+	callbackError = "Error in callback:\nERROR_MESSAGE",
+	cannotAssignProperty = "The class type '%s' has no assignable property '%s'.",
+	cannotConnectChange = "The %s class doesn't have a property called '%s'.",
+	cannotConnectEvent = "The %s class doesn't have an event called '%s'.",
+	cannotCreateClass = "Can't create a new instance of class '%s'.",
+	cannotDepend = "%s can't depend on %s.",
+	cleanupWasRenamed = "`Fusion.cleanup` was renamed to `Fusion.doCleanup`. This will be an error in future versions of Fusion.",
+	destroyedTwice = "`doCleanup()` was given something that it is already cleaning up. Unclear how to proceed.",
+	destructorRedundant = "%s destructors no longer do anything. If you wish to run code on destroy, `table.insert` a function into the `scope` argument. See discussion #292 on GitHub for advice.",
+	forKeyCollision = "The key '%s' was returned multiple times simultaneously, which is not allowed in `For` objects.",
+	infiniteLoop = "Detected an infinite loop. Consider adding an explicit breakpoint to your code to prevent a cyclic dependency.",
+	invalidAttributeChangeHandler = "The change handler for the '%s' attribute must be a function.",
+	invalidAttributeOutType = "[AttributeOut] properties must be given Value objects.",
+	invalidChangeHandler = "The change handler for the '%s' property must be a function.",
+	invalidEventHandler = "The handler for the '%s' event must be a function.",
+	invalidOutProperty = "The %s class doesn't have a property called '%s'.",
+	invalidOutType = "[Out] properties must be given Value objects.",
+	invalidPropertyType = "'%s.%s' expected a '%s' type, but got a '%s' type.",
+	invalidRefType = "Instance refs must be Value objects.",
+	invalidSpringDamping = "The damping ratio for a spring must be &gt;= 0. (damping was %.2f)",
+	invalidSpringSpeed = "The speed of a spring must be &gt;= 0. (speed was %.2f)",
+	mergeConflict = "Multiple definitions for '%s' found while merging.",
+	mistypedSpringDamping = "The damping ratio for a spring must be a number. (got a %s)",
+	mistypedSpringSpeed = "The speed of a spring must be a number. (got a %s)",
+	mistypedTweenInfo = "The tween info of a tween must be a TweenInfo. (got a %s)",
+	noTaskScheduler = "Fusion is not connected to an external task scheduler.",
+	poisonedScope = "Attempted to use a scope after it's been destroyed; %s",
+	possiblyOutlives = "%s will be destroyed before %s; %s. To fix this, review the order they're created in, and what scopes they belong to. See discussion #292 on GitHub for advice.",
+	propertySetError = "Error setting property:\nERROR_MESSAGE",
+	scopeMissing = "To create %s, provide a scope. (e.g. `%s`). See discussion #292 on GitHub for advice.",
+	springNanGoal = "A spring was given a NaN goal, so some simulation has been skipped. Ensure no springs have NaN goals.",
+	springNanMotion = "A spring encountered NaN during motion, so has snapped to the goal position. Ensure no springs have NaN positions or velocities.",
+	springTypeMismatch = "The type '%s' doesn't match the spring's type '%s'.",
+	stateGetWasRemoved = "`StateObject:get()` has been replaced by `use()` and `peek()` - see discussion #217 on GitHub.",
+	tweenNanGoal = "A tween was given a NaN goal, so some animation has been skipped. Ensure no tweens have NaN goals.",
+	tweenNanMotion = "A tween encountered NaN during motion, so has snapped to the goal. Ensure no tweens have NaN in their tween infos.",
+	unknownMessage = "Unknown error:\nERROR_MESSAGE",
+	unrecognisedChildType = "'%s' type children aren't accepted by `[Children]`.",
+	unrecognisedPropertyKey = "'%s' keys aren't accepted in property tables.",
+	unrecognisedPropertyStage = "'%s' isn't a valid stage for a special key to be applied at.",
+	useAfterDestroy = "%s is no longer valid - it was destroyed before %s. See discussion #292 on GitHub for advice."
+}</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX42">
+          <Properties>
+            <string name="Name">parseError</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	An xpcall() error handler to collect and parse useful information about
+	errors, such as clean messages and stack traces.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+
+local function parseError(
+	err: string
+): Types.Error
+	return {
+		type = "Error",
+		raw = err,
+		message = err:gsub("^.+:%d+:%s*", ""),
+		trace = debug.traceback(nil, 2)
+	}
+end
+
+return parseError</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="RBX43">
+        <Properties>
+          <string name="Name">Memory</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX44">
+          <Properties>
+            <string name="Name">checkLifetime</string>
+            <ProtectedString name="Source">
+
+--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Procedures for checking lifetimes and printing helpful warnings about them.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local whichLivesLonger = require(Package.Memory.whichLivesLonger)
+local nameOf = require(Package.Utility.nameOf)
+
+local checkLifetime = {}
+
+checkLifetime.formatters = {}
+
+function checkLifetime.formatters.useFunction(
+	self: unknown,
+	used: unknown
+): (string, string)
+	local selfName = nameOf(self, "object")
+	local usedName = nameOf(used, "object")
+	return `The use()-d {usedName}`, `the {selfName}`
+end
+	
+function checkLifetime.formatters.boundProperty(
+	instance: Instance,
+	bound: unknown,
+	property: string
+): (string, string)
+	local selfName = instance.Name
+	local boundName = nameOf(bound, "value")
+	return `The {boundName} (bound to the {property} property)`, `the {selfName} instance`
+end
+
+function checkLifetime.formatters.boundAttribute(
+	instance: Instance,
+	bound: unknown,
+	attribute: string
+): (string, string)
+	local selfName = instance.Name
+	local boundName = nameOf(bound, "value")
+	return `The {boundName} (bound to the {attribute} attribute)`, `the {selfName} instance`
+end
+
+function checkLifetime.formatters.propertyOutputsTo(
+	instance: Instance,
+	bound: unknown,
+	property: string
+): (string, string)
+	local selfName = instance.Name
+	local boundName = nameOf(bound, "object")
+	return `The {boundName} (which the {property} property outputs to)`, `the {selfName} instance`
+end
+
+function checkLifetime.formatters.attributeOutputsTo(
+	instance: Instance,
+	bound: unknown,
+	attribute: string
+): (string, string)
+	local selfName = instance.Name
+	local boundName = nameOf(bound, "object")
+	return `The {boundName} (which the {attribute} attribute outputs to)`, `the {selfName} instance`
+end
+
+function checkLifetime.formatters.refOutputsTo(
+	instance: Instance,
+	bound: unknown
+): (string, string)
+	local selfName = instance.Name
+	local boundName = nameOf(bound, "object")
+	return `The {boundName} (which the Ref key outputs to)`, `the {selfName} instance`
+end
+
+function checkLifetime.formatters.animationGoal(
+	self: unknown,
+	goal: unknown
+): (string, string)
+	local selfName = nameOf(self, "object")
+	local goalName = nameOf(goal, "object")
+	return `The goal {goalName}`, `the {selfName} that is following it`
+end
+
+function checkLifetime.formatters.parameter(
+	self: unknown,
+	used: unknown,
+	parameterName: string | false
+): (string, string)
+	local selfName = nameOf(self, "object")
+	local usedName = nameOf(used, "object")
+	if parameterName == false then
+		return `The {usedName} parameter`, `the {selfName} that it was used for`
+	else
+		return `The {usedName} representing the {parameterName} parameter`, `the {selfName} that it was used for`
+	end
+end
+
+function checkLifetime.formatters.observer(
+	self: unknown,
+	watched: unknown
+): (string, string)
+	local selfName = nameOf(self, "object")
+	local watchedName = nameOf(watched, "object")
+	return `The watched {watchedName}`, `the {selfName} that's observing it for changes`
+end
+
+function checkLifetime.bOutlivesA&lt;A, B, Args...&gt;(
+	scopeA: Types.Scope&lt;unknown&gt;,
+	a: A,
+	scopeB: Types.Scope&lt;unknown&gt;?,
+	b: B,
+	formatter: (a: A, b: B, Args...) -&gt; (string, string),
+	...: Args...
+)
+	if scopeB == nil then
+		External.logError("useAfterDestroy", nil, formatter(a, b, ...))
+	elseif whichLivesLonger(scopeA, a, scopeB, b) == "definitely-a" then
+		local aName, bName = formatter(a, b, ...)
+		External.logWarn(
+			"possiblyOutlives",
+			aName, bName, 
+			if scopeA == scopeB then
+				"they're in the same scope, but the latter is destroyed too quickly"
+			else
+				"the latter is in a different scope that gets destroyed too quickly"
+		)
+	end
+end
+return checkLifetime</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX45">
+          <Properties>
+            <string name="Name">deriveScope</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Creates an empty scope with the same metatables as the original scope. Used
+	for preserving access to constructors when creating inner scopes.
+
+	This is the public version of the function, which implements external
+	debugging hooks.
+]]
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local ExternalDebug = require(Package.ExternalDebug)
+local deriveScopeImpl = require(Package.Memory.deriveScopeImpl)
+
+local function deriveScope(...)
+	local scope = deriveScopeImpl(...)
+	ExternalDebug.trackScope(scope)
+	return scope
+end
+
+return deriveScope :: Types.DeriveScopeConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX46">
+          <Properties>
+            <string name="Name">deriveScopeImpl</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Creates an empty scope with the same metatables as the original scope. Used
+	for preserving access to constructors when creating inner scopes.
+
+	This is the internal version of the function, which does not implement
+	external debugging hooks.
+]]
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local merge = require(Package.Utility.merge)
+local scopePool = require(Package.Memory.scopePool)
+
+-- This return type is technically a lie, but it's required for useful type
+-- checking behaviour.
+local function deriveScopeImpl&lt;T&gt;(
+	existing: Types.Scope&lt;T&gt;,
+	methods: {[unknown]: unknown}?,
+	...: {[unknown]: unknown}
+): any
+	local metatable = getmetatable(existing)
+	if methods ~= nil then
+		metatable = table.clone(metatable)
+		metatable.__index = merge(
+			true, {}, 
+			metatable.__index, 
+			merge(
+				false, {},
+				methods, 
+				...
+			)
+		)
+	end
+	local scope = setmetatable(
+		scopePool.reuseAny() :: any or {},
+		metatable
+	)
+	return scope
+end
+
+return (deriveScopeImpl :: any) :: Types.DeriveScopeConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX47">
+          <Properties>
+            <string name="Name">doCleanup</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Cleans up the tasks passed in as the arguments.
+	A task can be any of the following:
+
+	- an Instance - will be destroyed
+	- an RBXScriptConnection - will be disconnected
+	- a function - will be run
+	- a table with a `Destroy` or `destroy` function - will be called
+	- an array - `cleanup` will be called on each item
+]]
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local scopePool = require(Package.Memory.scopePool)
+local poisonScope = require(Package.Memory.poisonScope)
+
+local alreadyDestroying: {[Types.Task]: true} = {}
+
+local function doCleanup(
+	task: Types.Task
+): ()
+	if alreadyDestroying[task] then
+		return External.logError("destroyedTwice")
+	end
+	alreadyDestroying[task] = true
+
+	-- case 1: Instance
+	if typeof(task) == "Instance" then
+		task:Destroy()
+
+	-- case 2: RBXScriptConnection
+	elseif typeof(task) == "RBXScriptConnection" then
+		task:Disconnect()
+
+	-- case 3: callback
+	elseif typeof(task) == "function" then
+		task()
+
+	elseif typeof(task) == "table" then
+		local task = (task :: any) :: {Destroy: (...unknown) -&gt; (...unknown)?, destroy: (...unknown) -&gt; (...unknown)?}
+
+		-- case 4: destroy() function
+		if typeof(task.destroy) == "function" then
+			local task = (task :: any) :: {destroy: (...unknown) -&gt; (...unknown)}
+			task:destroy()
+
+		-- case 5: Destroy() function
+		elseif typeof(task.Destroy) == "function" then
+			local task = (task :: any) :: {Destroy: (...unknown) -&gt; (...unknown)}
+			task:Destroy()
+
+		-- case 6: table of tasks with an array part
+		elseif task[1] ~= nil then
+			local task = task :: {Types.Task}
+
+			-- It is important to iterate backwards through the table, since
+			-- objects are added in order of construction.
+			for index = #task, 1, -1 do
+				doCleanup(task[index])
+				task[index] = nil
+			end
+
+			if External.isTimeCritical() then
+				scopePool.giveIfEmpty(task)
+			else
+				poisonScope(task, "`doCleanup()` was previously called on this scope. Ensure you are not reusing scopes after cleanup.")
+			end
+		end
+	end
+	
+	alreadyDestroying[task] = nil
+end
+
+return doCleanup</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX48">
+          <Properties>
+            <string name="Name">innerScope</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Derives a new scope that's destroyed exactly once, whether by the user or by
+	the scope that it's inside of.
+]]
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local ExternalDebug = require(Package.ExternalDebug)
+local deriveScopeImpl = require(Package.Memory.deriveScopeImpl)
+
+local function innerScope&lt;T&gt;(
+	existing: Types.Scope&lt;T&gt;,
+	...: {[unknown]: unknown}
+): any
+	local new = deriveScopeImpl(existing, ...)
+	table.insert(existing, new)
+	table.insert(
+		new, 
+		function()
+			local index = table.find(existing, new)
+			if index ~= nil then
+				table.remove(existing, index)
+			end
+		end
+	)
+	ExternalDebug.trackScope(new)
+	return new
+end
+
+return (innerScope :: any) :: Types.DeriveScopeConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX49">
+          <Properties>
+            <string name="Name">legacyCleanup</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+local doCleanup = require(Package.Memory.doCleanup)
+
+local function legacyCleanup(
+	value: Types.Task
+)
+	External.logWarn("cleanupWasRenamed")
+	return doCleanup(value)
+end
+
+return legacyCleanup</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX50">
+          <Properties>
+            <string name="Name">needsDestruction</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Returns true if the given value is not automatically memory managed, and
+	requires manual cleanup.
+]]
+
+local function needsDestruction(
+	x: unknown
+): boolean
+	return typeof(x) == "Instance"
+end
+
+return needsDestruction</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX51">
+          <Properties>
+            <string name="Name">poisonScope</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	'Poisons' the given scope; if the scope is used again, then it will cause
+	the program to crash.
+]]
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+
+local function poisonScope(
+	scope: Types.Scope,
+	context: string
+): ()
+	local mt = getmetatable(scope)
+	if typeof(mt) == "table" and mt._FUSION_POISONED then
+		return
+	end
+	table.clear(scope)
+	setmetatable(scope :: any, {
+		_FUSION_POISONED = true,
+		__index = function()
+			External.logError("poisonedScope", nil, context)
+		end,
+		__newindex = function()
+			External.logError("poisonedScope", nil, context)
+		end
+	})
+end
+
+return poisonScope</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX52">
+          <Properties>
+            <string name="Name">scoped</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Creates cleanup tables with access to constructors as methods.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local ExternalDebug = require(Package.ExternalDebug)
+local merge = require(Package.Utility.merge)
+local scopePool = require(Package.Memory.scopePool)
+
+local function scoped(
+	...: {[unknown]: unknown}
+): any
+	local scope = setmetatable(
+		scopePool.reuseAny() :: any or {},
+		{__index = merge(false, {}, ...)}
+	) :: any
+	ExternalDebug.trackScope(scope)
+	return scope
+end
+
+return (scoped :: any) :: Types.ScopedConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX53">
+          <Properties>
+            <string name="Name">scopePool</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local poisonScope = require(Package.Memory.poisonScope)
+local ExternalDebug = require(Package.ExternalDebug)
+
+local ENABLE_POOLING = false
+local MAX_POOL_SIZE = 16 -- TODO: need to test what an ideal number for this is
+
+local pool = {}
+local poolSize = 0
+
+return {
+	giveIfEmpty = function&lt;S&gt;(
+		scope: Types.Scope&lt;S&gt;
+	): Types.Scope&lt;S&gt;?
+		if next(scope) == nil then
+			ExternalDebug.untrackScope(scope)
+			if ENABLE_POOLING and poolSize &lt; MAX_POOL_SIZE then
+				poolSize += 1
+				pool[poolSize] = scope
+			else
+				poisonScope(scope, "previously passed to the internal scope pool, which indicates a Fusion bug.")
+			end
+			return nil
+		else
+			return scope
+		end
+	end,
+	clearAndGive = function(
+		scope: Types.Scope&lt;unknown&gt;
+	)
+		ExternalDebug.untrackScope(scope)
+		table.clear(scope)
+		if ENABLE_POOLING and poolSize &lt; MAX_POOL_SIZE then
+			poolSize += 1
+			pool[poolSize] = scope :: any
+		else
+			poisonScope(scope, "previously passed to the internal scope pool, which indicates a Fusion bug.")
+		end
+	end,
+	reuseAny = function(): Types.Scope&lt;unknown&gt;
+		if poolSize == 0 then
+			return nil :: any
+		else
+			local scope = pool[poolSize]
+			poolSize -= 1
+			return scope
+		end
+	end
+}</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX54">
+          <Properties>
+            <string name="Name">whichLivesLonger</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Calculates how the lifetimes of the two values relate. Specifically, it
+	calculates which value will be destroyed earlier or later, if it is possible
+	to infer this from their scopes.
+]]
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+
+local function whichScopeLivesLonger(
+	scopeA: Types.Scope&lt;unknown&gt;,
+	scopeB: Types.Scope&lt;unknown&gt;
+): "definitely-a" | "definitely-b" | "unsure"
+	-- If we can prove one scope is inside of the other scope, then the outer
+	-- scope must live longer than the inner scope (assuming idiomatic scopes).
+	-- So, we will search the scopes recursively until we find one of them, at
+	-- which point we know they must have been found inside the other scope.
+	local openSet: {Types.Scope&lt;unknown&gt;} = {scopeA, scopeB}
+	local nextOpenSet: {Types.Scope&lt;unknown&gt;} = {}
+	local openSetSize, nextOpenSetSize = 2, 0
+	local closedSet = {}
+	while openSetSize &gt; 0 do
+		for _, scope in openSet do
+			closedSet[scope] = true
+			for _, inScope in ipairs(scope) do
+				if inScope == scopeA then
+					return "definitely-b"
+				elseif inScope == scopeB then
+					return "definitely-a"
+				elseif typeof(inScope) == "table" then
+					local inScope = inScope :: {unknown}
+					if inScope[1] ~= nil and closedSet[scope] == nil then
+						nextOpenSetSize += 1
+						nextOpenSet[nextOpenSetSize] = inScope :: Types.Scope&lt;unknown&gt;
+					end
+				end 
+			end
+		end
+		table.clear(openSet)
+		openSet, nextOpenSet = nextOpenSet, openSet
+		openSetSize, nextOpenSetSize = nextOpenSetSize, 0
+	end
+	return "unsure"
+end
+
+local function whichLivesLonger(
+	scopeA: Types.Scope&lt;unknown&gt;,
+	a: unknown,
+	scopeB: Types.Scope&lt;unknown&gt;,
+	b: unknown
+): "definitely-a" | "definitely-b" | "unsure"
+	if External.isTimeCritical() then
+		return "unsure"
+	elseif scopeA == scopeB then
+		local scopeA: {unknown} = scopeA
+		for index = #scopeA, 1, -1 do
+			local value = scopeA[index]
+			if value == a then
+				return "definitely-b"
+			elseif value == b then
+				return "definitely-a"
+			end
+		end
+		return "unsure"
+	else
+		return whichScopeLivesLonger(scopeA, scopeB)
+	end
+end
+
+return whichLivesLonger</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="RBX55">
+        <Properties>
+          <string name="Name">RobloxExternal</string>
+          <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+
+--[[
+	Roblox implementation for Fusion's abstract provider layer.
+]]
+
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+
+local Package = script.Parent
+local External = require(Package.External)
+
+local RobloxExternal = {}
+
+RobloxExternal.policies = {
+	allowWebLinks = RunService:IsStudio()
+}
+
+--[[
+   Sends an immediate task to the external provider. Throws if none is set.
+]]
+function RobloxExternal.doTaskImmediate(
+	resume: () -&gt; ()
+)
+   task.spawn(resume)
+end
+
+--[[
+	Sends a deferred task to the external provider. Throws if none is set.
+]]
+function RobloxExternal.doTaskDeferred(
+	resume: () -&gt; ()
+)
+	task.defer(resume)
+end
+
+--[[
+	Errors in a different thread to preserve the flow of execution.
+]]
+function RobloxExternal.logErrorNonFatal(
+	errorString: string
+)
+	task.spawn(error, errorString, 0)
+end
+
+--[[
+	Shows a warning message in the output.
+]]
+RobloxExternal.logWarn = warn
+
+--[[
+	Sends an update step to Fusion using the Roblox clock time.
+]]
+local function performUpdateStep()
+	External.performUpdateStep(os.clock())
+end
+
+--[[
+	Binds Fusion's update step to RunService step events.
+]]
+local stopSchedulerFunc = nil :: (() -&gt; ())?
+function RobloxExternal.startScheduler()
+	if stopSchedulerFunc ~= nil then
+		return
+	end
+	if RunService:IsClient() then
+		-- In cases where multiple Fusion modules are running simultaneously,
+		-- this prevents collisions.
+		local id = "FusionUpdateStep_" .. HttpService:GenerateGUID()
+		RunService:BindToRenderStep(
+			id,
+			Enum.RenderPriority.First.Value,
+			performUpdateStep
+		)
+		stopSchedulerFunc = function()
+			RunService:UnbindFromRenderStep(id)
+		end
+	else
+		local connection = RunService.Heartbeat:Connect(performUpdateStep)
+		stopSchedulerFunc = function()
+			connection:Disconnect()
+		end
+	end
+end
+
+--[[
+	Unbinds Fusion's update step from RunService step events.
+]]
+function RobloxExternal.stopScheduler()
+	if stopSchedulerFunc ~= nil then
+		stopSchedulerFunc()
+		stopSchedulerFunc = nil
+	end
+end
+
+return RobloxExternal</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="RBX56">
+        <Properties>
+          <string name="Name">State</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX57">
+          <Properties>
+            <string name="Name">castToState</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Returns the input *only* if it is a state object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+
+local function castToState&lt;T&gt;(
+	target: Types.UsedAs&lt;T&gt;
+): Types.StateObject&lt;T&gt;?
+	if
+		typeof(target) == "table" and
+		target.type == "State" 
+	then
+		return target
+	else
+		return nil
+	end
+end
+
+return castToState</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX58">
+          <Properties>
+            <string name="Name">Computed</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A specialised state object for tracking single values computed from a
+	user-defined computation.
+
+	https://elttob.uk/Fusion/0.3/api-reference/state/types/computed/
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Logging
+local parseError = require(Package.Logging.parseError)
+-- Utility
+local isSimilar = require(Package.Utility.isSimilar)
+local never = require(Package.Utility.never)
+-- Graph
+local depend = require(Package.Graph.depend)
+-- State
+local castToState = require(Package.State.castToState)
+local peek = require(Package.State.peek)
+-- Memory
+local doCleanup = require(Package.Memory.doCleanup)
+local deriveScope = require(Package.Memory.deriveScope)
+local checkLifetime = require(Package.Memory.checkLifetime)
+local scopePool = require(Package.Memory.scopePool)
+-- Utility
+local nicknames = require(Package.Utility.nicknames)
+
+type Self&lt;T, S&gt; = Types.Computed&lt;T&gt; &amp; {
+	_innerScope: Types.Scope&lt;S&gt;?,
+	_processor: (Types.Use, Types.Scope&lt;S&gt;) -&gt; T
+}
+
+local class = {}
+class.type = "State"
+class.kind = "Computed"
+class.timeliness = "lazy"
+
+local METATABLE = table.freeze {__index = class}
+
+local function Computed&lt;T, S&gt;(
+	scope: S &amp; Types.Scope&lt;unknown&gt;,
+	processor: (Types.Use, S) -&gt; T,
+	destructor: unknown?
+): Types.Computed&lt;T&gt;
+	local createdAt = os.clock()
+	if typeof(scope) == "function" then
+		External.logError("scopeMissing", nil, "Computeds", "myScope:Computed(function(use, scope) ... end)")
+	elseif destructor ~= nil then
+		External.logWarn("destructorRedundant", "Computed")
+	end
+	local self: Self&lt;T, S&gt; = setmetatable(
+		{
+			createdAt = createdAt,
+			dependencySet = {},
+			dependentSet = {},
+			lastChange = nil,
+			scope = scope,
+			validity = "invalid",
+			_EXTREMELY_DANGEROUS_usedAsValue = nil,
+			_innerScope = nil,
+			_processor = processor
+		}, 
+		METATABLE
+	) :: any
+	local destroy = function()
+		self.scope = nil
+		for dependency in pairs(self.dependencySet) do
+			dependency.dependentSet[self] = nil
+		end
+		if self._innerScope ~= nil then
+			doCleanup(self._innerScope)
+		end
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "Computed"
+	table.insert(scope, destroy)
+	return self
+end
+
+function class.get&lt;T, S&gt;(
+	_self: Self&lt;T, S&gt;
+): never
+	External.logError("stateGetWasRemoved")
+	return never()
+end
+
+function class._evaluate&lt;T, S&gt;(
+	self: Self&lt;T, S&gt;
+): boolean
+	if self.scope == nil then
+		return false
+	end
+	local outerScope = self.scope :: S &amp; Types.Scope&lt;unknown&gt;
+	local innerScope = deriveScope(outerScope)
+	local function use&lt;T&gt;(target: Types.UsedAs&lt;T&gt;): T
+		local targetState = castToState(target)
+		if targetState ~= nil then
+			checkLifetime.bOutlivesA(
+				outerScope, self.oldestTask, 
+				targetState.scope, targetState.oldestTask, 
+				checkLifetime.formatters.useFunction
+			)
+			depend(self, targetState)
+		end
+		return peek(target)
+	end
+	local ok, newValue = xpcall(self._processor, parseError, use, innerScope)
+	local innerScope = scopePool.giveIfEmpty(innerScope)
+	if ok then
+		local similar = isSimilar(self._EXTREMELY_DANGEROUS_usedAsValue, newValue)
+		if self._innerScope ~= nil then
+			doCleanup(self._innerScope)
+		end
+		self._innerScope = innerScope
+
+		self._EXTREMELY_DANGEROUS_usedAsValue = newValue
+		return not similar
+	else
+		local errorObj = (newValue :: any) :: Types.Error
+		if innerScope ~= nil then
+			doCleanup(innerScope)
+		end
+		innerScope = nil
+		
+		-- this needs to be non-fatal, because otherwise it'd disrupt the
+		-- update process
+		External.logErrorNonFatal("callbackError", errorObj)
+		return false
+	end
+end
+
+table.freeze(class)
+return Computed :: Types.ComputedConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX59">
+          <Properties>
+            <string name="Name">For</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	The generic implementation for all `For` objects.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Graph
+local depend = require(Package.Graph.depend)
+-- State
+local peek = require(Package.State.peek)
+local castToState = require(Package.State.castToState)
+local ForTypes = require(Package.State.For.ForTypes)
+-- Utility
+local never = require(Package.Utility.never)
+local nicknames = require(Package.Utility.nicknames)
+
+local Disassembly = require(Package.State.For.Disassembly)
+
+type Self&lt;S, KI, KO, VI, VO&gt; = Types.For&lt;KO, VO&gt; &amp; {
+	_disassembly: ForTypes.Disassembly&lt;S, KI, KO, VI, VO&gt;
+}
+
+local class = {}
+class.type = "State"
+class.kind = "For"
+class.timeliness = "lazy"
+
+local METATABLE = table.freeze {__index = class}
+
+local function For&lt;S, KI, KO, VI, VO&gt;(
+	scope: Types.Scope&lt;S&gt;,
+	inputTable: Types.UsedAs&lt;{[KI]: VI}&gt;,
+	constructor: (
+		Types.Scope&lt;S&gt;,
+		initialKey: KI,
+		initialValue: VI
+	) -&gt; ForTypes.SubObject&lt;S, KI, KO, VI, VO&gt;
+): Types.For&lt;KO, VO&gt;
+	local createdAt = os.clock()
+	local self: Self&lt;S, KI, KO, VI, VO&gt; = setmetatable(
+		{
+			createdAt = createdAt,
+			dependencySet = {},
+			dependentSet = {},
+			scope = scope,
+			validity = "invalid",
+			_EXTREMELY_DANGEROUS_usedAsValue = {},
+			_disassembly = Disassembly(
+				scope,
+				inputTable,
+				constructor
+			)
+		}, 
+		METATABLE
+	) :: any
+
+	local destroy = function()
+		self.scope = nil
+		for dependency in pairs(self.dependencySet) do
+			dependency.dependentSet[self] = nil
+		end
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "For"
+	table.insert(scope, destroy)
+
+	return self
+end
+
+function class.get&lt;S, KI, KO, VI, VO&gt;(
+	_self: Self&lt;S, KI, KO, VI, VO&gt;
+): never
+	External.logError("stateGetWasRemoved")
+	return never()
+end
+
+function class._evaluate&lt;S, KI, KO, VI, VO&gt;(
+	self: Self&lt;S, KI, KO, VI, VO&gt;
+): boolean
+	if self.scope == nil then
+		return false
+	end
+	local outerScope = self.scope :: S &amp; Types.Scope&lt;unknown&gt;
+
+	depend(self, self._disassembly)
+	table.clear(self._EXTREMELY_DANGEROUS_usedAsValue)
+	self._disassembly:populate(
+		function&lt;T&gt;(
+			maybeState: Types.UsedAs&lt;T&gt;
+		): T
+			local state = castToState(maybeState)
+			if state ~= nil then
+				depend(self, state)
+			end
+			return peek(maybeState)
+		end,
+		self._EXTREMELY_DANGEROUS_usedAsValue
+	)
+
+	return true
+end
+
+table.freeze(class)
+return For</ProtectedString>
+          </Properties>
+          <Item class="ModuleScript" referent="RBX60">
+            <Properties>
+              <string name="Name">Disassembly</string>
+              <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Breaks down an input table into reactive sub-objects for each pair.
+]]
+
+local Package = script.Parent.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Graph
+local depend = require(Package.Graph.depend)
+-- State
+local peek = require(Package.State.peek)
+local castToState = require(Package.State.castToState)
+local ForTypes = require(Package.State.For.ForTypes)
+-- Memory
+local doCleanup = require(Package.Memory.doCleanup)
+local deriveScope = require(Package.Memory.deriveScope)
+local scopePool = require(Package.Memory.scopePool)
+-- Utility
+local nameOf = require(Package.Utility.nameOf)
+local nicknames = require(Package.Utility.nicknames)
+
+type Self&lt;S, KI, KO, VI, VO&gt; = ForTypes.Disassembly&lt;S, KI, KO, VI, KO&gt; &amp; {
+	scope: (S &amp; Types.Scope&lt;unknown&gt;)?,
+	_inputTable: Types.UsedAs&lt;{[KI]: VI}&gt;,
+	_constructor: (
+		Types.Scope&lt;S&gt;,
+		initialKey: KI,
+		initialValue: VI
+	) -&gt; ForTypes.SubObject&lt;S, KI, KO, VI, VO&gt;,
+	_subObjects: {[ForTypes.SubObject&lt;S, KI, KO, VI, VO&gt;]: true}
+}
+
+
+local class = {}
+class.type = "Graph"
+class.kind = "For.Disassembly"
+class.timeliness = "lazy"
+
+local METATABLE = table.freeze {__index = class}
+
+local function Disassembly&lt;S, KI, KO, VI, VO&gt;(
+	scope: S &amp; Types.Scope&lt;unknown&gt;,
+	inputTable: Types.UsedAs&lt;{[KI]: VI}&gt;,
+	constructor: (
+		Types.Scope&lt;S&gt;,
+		initialKey: KI,
+		initialValue: VI
+	) -&gt; ForTypes.SubObject&lt;S, KI, KO, VI, VO&gt;
+): ForTypes.Disassembly&lt;S, KI, KO, VI, KO&gt;
+	local createdAt = os.clock()
+	local self = setmetatable(
+		{
+			createdAt = createdAt,
+			dependencySet = {},
+			dependentSet = {},
+			scope = scope,
+			validity = "invalid",
+			_inputTable = inputTable,
+			_constructor = constructor,
+			_subObjects = {}
+		}, 
+		METATABLE
+	) :: any
+
+	local destroy = function()
+		self.scope = nil
+		for dependency in pairs(self.dependencySet) do
+			dependency.dependentSet[self] = nil
+		end
+		for subObject in self._subObjects do
+			if subObject.maybeScope ~= nil then
+				doCleanup(subObject.maybeScope)
+				subObject.maybeScope = nil
+			end
+		end
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "For (internal disassembler)"
+	table.insert(scope, destroy)
+	
+	return self
+end
+
+function class.populate&lt;S, KI, KO, VI, VO&gt;(
+	self: Self&lt;S, KI, KO, VI, VO&gt;,
+	use: Types.Use,
+	output: {[KO]: VO}
+): ()
+	local minArrayIndex = math.huge
+	local maxArrayIndex = -math.huge
+	local hasHoles = false
+	for subObject in self._subObjects do
+		local outputKey, outputValue = subObject:useOutputPair(use)
+		if outputKey == nil or outputValue == nil then
+			hasHoles = true
+			continue
+		elseif output[outputKey] ~= nil then
+			External.logErrorNonFatal("forKeyCollision", nil, tostring(outputKey))
+			continue
+		end
+		output[outputKey] = outputValue
+		if typeof(outputKey) == "number" then
+			minArrayIndex = math.min(minArrayIndex, outputKey)
+			maxArrayIndex = math.max(maxArrayIndex, outputKey)
+		end
+	end
+	-- Be careful of NaN here
+	if hasHoles and maxArrayIndex &gt; minArrayIndex then
+		local output: {[number]: VO} = output :: any
+		local moveToIndex = minArrayIndex
+		for moveFromIndex = minArrayIndex, maxArrayIndex do
+			local outputValue = output[moveFromIndex]
+			if outputValue == nil then
+				continue
+			end
+			-- The ordering is important in case the indices are the same
+			output[moveFromIndex] = nil
+			output[moveToIndex] = outputValue
+			moveToIndex += 1
+		end
+	end
+end
+
+function class._evaluate&lt;S, KI, KO, VI, VO&gt;(
+	self: Self&lt;S, KI, KO, VI, VO&gt;
+): boolean
+	local outerScope = self.scope :: S &amp; Types.Scope&lt;unknown&gt;
+	local inputState = castToState(self._inputTable)
+	if inputState ~= nil then
+		if inputState.scope == nil then
+			External.logError(
+				"useAfterDestroy",
+				nil,
+				`The input {nameOf(inputState, "table")}`,
+				`the For object that is watching it`
+			)
+		end
+		depend(self, inputState)
+	end
+
+	local pendingPairs = {} :: {[KI]: VI}
+	for key, value in peek(self._inputTable) do
+		pendingPairs[key] = value
+	end
+
+	local newSubObjects = {} :: typeof(self._subObjects)
+
+	for subObject in self._subObjects do
+		local reused = false
+		local oldInputKey = subObject.inputKey
+		local oldInputValue = subObject.inputValue
+		local newInputKey: KI
+		-- Reuse when the keys are identical.
+		if not subObject.roamKeys and pendingPairs[oldInputKey] ~= nil then
+			reused = true
+			newInputKey = oldInputKey
+		else -- Try and reuse some other pair instead.
+			for pendingKey, pendingValue in pendingPairs do
+				reused = true
+				newInputKey = pendingKey
+				if subObject.roamValues then
+					break
+				end
+				if pendingValue == oldInputValue then
+					-- If the values are the same, then no need to update those,
+					-- so prefer this choice to any other.
+					break 
+				end
+			end
+		end
+		if reused then
+			local newInputValue = pendingPairs[newInputKey]
+			newSubObjects[subObject] = true
+			if newInputKey ~= oldInputKey then
+				subObject.inputKey = newInputKey
+				subObject:invalidateInputKey()
+			end
+			if newInputValue ~= oldInputValue then
+				subObject.inputValue = newInputValue
+				subObject:invalidateInputValue()
+			end
+			pendingPairs[newInputKey] = nil
+		else -- Too many sub objects for the number of pairs.
+			if subObject.maybeScope ~= nil then
+				doCleanup(subObject.maybeScope)
+				subObject.maybeScope = nil
+			end
+		end
+	end
+
+	-- Generate new objects if needed to cover the remaining pending pairs.
+	for pendingKey, pendingValue in pendingPairs do
+		local subObject = self._constructor(deriveScope(outerScope), pendingKey, pendingValue)
+		if subObject.maybeScope ~= nil then
+			subObject.maybeScope = scopePool.giveIfEmpty(subObject.maybeScope)
+		end
+		newSubObjects[subObject] = true
+	end
+
+	self._subObjects = newSubObjects
+
+	return true
+end
+
+table.freeze(class)
+return Disassembly</ProtectedString>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="RBX61">
+            <Properties>
+              <string name="Name">ForTypes</string>
+              <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Stores types that are commonly used between For objects.
+]]
+
+local Package = script.Parent.Parent.Parent
+local Types = require(Package.Types)
+
+export type SubObject&lt;S, KI, KO, VI, VO&gt; = {
+	-- Not all sub objects need to store a scope, for example if the scope
+	-- remains empty, it'll be given back to the scope pool.
+	maybeScope: Types.Scope&lt;S&gt;?,
+	inputKey: KI,
+	inputValue: VI,
+	roamKeys: boolean,
+	roamValues: boolean,
+	invalidateInputKey: (SubObject&lt;S, KI, KO, VI, VO&gt;) -&gt; (),
+	invalidateInputValue: (SubObject&lt;S, KI, KO, VI, VO&gt;) -&gt; (),
+	useOutputPair: (SubObject&lt;S, KI, KO, VI, VO&gt;, Types.Use) -&gt; (KO?, VO?)
+}
+
+export type Disassembly&lt;S, KI, KO, VI, VO&gt; = Types.GraphObject &amp; {
+	populate: (Disassembly&lt;S, KI, KO, VI, VO&gt;, Types.Use, output: {[KO]: VO}) -&gt; ()
+}
+
+return nil
+</ProtectedString>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="ModuleScript" referent="RBX62">
+          <Properties>
+            <string name="Name">ForKeys</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Constructs and returns a new For state object which processes keys and
+	preserves values.
+
+	https://elttob.uk/Fusion/0.3/api-reference/state/members/forkeys/
+
+	TODO: the sub objects constructed here can be more efficiently implemented
+	as a dedicated state object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Memory
+local doCleanup = require(Package.Memory.doCleanup)
+-- State
+local For = require(Package.State.For)
+local Value = require(Package.State.Value)
+local Computed = require(Package.State.Computed)
+local ForTypes = require(Package.State.For.ForTypes)
+-- Logging
+local parseError = require(Package.Logging.parseError)
+
+local SUB_OBJECT_META = {
+	__index = {
+		roamKeys = false,
+		roamValues = true,
+		invalidateInputKey = function(self): ()
+			self._inputKeyState:set(self.inputKey)
+		end,
+		invalidateInputValue = function(self): ()
+			-- do nothing
+		end,
+		useOutputPair = function(self, use)
+			return use(self._outputKeyState), self.inputValue
+		end
+	}
+}
+
+local function SubObject&lt;KI, KO, V, S&gt;(
+	scope: Types.Scope&lt;S&gt;,
+	initialKey: KI,
+	initialValue: V,
+	processor: (Types.Use, Types.Scope&lt;S&gt;, KI) -&gt; KO
+): ForTypes.SubObject&lt;S, KI, KO, V, V&gt;
+	local self = {}
+	self.maybeScope = scope
+	self.inputKey = initialKey
+	self.inputValue = initialValue
+	self._inputKeyState = Value(scope, initialKey)
+	self._processor = processor
+	self._outputKeyState = Computed(scope, function(use, scope): KO?
+		local inputKey = use(self._inputKeyState)
+		local ok, outputKey = xpcall(self._processor, parseError, use, scope, inputKey)
+		if ok then
+			return outputKey
+		else
+			local error: Types.Error = outputKey :: any
+			error.context = `while processing key {tostring(inputKey)}`
+			External.logErrorNonFatal("callbackError", error)
+			doCleanup(scope)
+			table.clear(scope)
+			return nil
+		end
+	end)
+	return setmetatable(self, SUB_OBJECT_META) :: any
+end
+
+local function ForKeys&lt;KI, KO, V, S&gt;(
+	scope: Types.Scope&lt;S&gt;,
+	inputTable: Types.UsedAs&lt;{[KI]: V}&gt;,
+	processor: (Types.Use, Types.Scope&lt;S&gt;, KI) -&gt; KO,
+	destructor: unknown?
+): Types.For&lt;KO, V&gt;
+	if typeof(inputTable) == "function" then
+		External.logError("scopeMissing", nil, "ForKeys", "myScope:ForKeys(inputTable, function(scope, use, key) ... end)")
+	elseif destructor ~= nil then
+		External.logWarn("destructorRedundant", "ForKeys")
+	end
+	return For(
+		scope, 
+		inputTable, 
+		function(scope, initialKey, initialValue)
+			return SubObject(scope, initialKey, initialValue, processor)
+		end
+	)
+end
+
+return ForKeys :: Types.ForKeysConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX63">
+          <Properties>
+            <string name="Name">ForPairs</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Constructs and returns a new For state object which processes keys and
+	values in pairs.
+
+	https://elttob.uk/Fusion/0.3/api-reference/state/members/forpairs/
+
+	TODO: the sub objects constructed here can be more efficiently implemented
+	as a dedicated state object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- State
+local For = require(Package.State.For)
+local Value = require(Package.State.Value)
+local Computed = require(Package.State.Computed)
+local ForTypes = require(Package.State.For.ForTypes)
+-- Logging
+local parseError = require(Package.Logging.parseError)
+-- Memory
+local doCleanup = require(Package.Memory.doCleanup)
+
+local SUB_OBJECT_META = {
+	__index = {
+		roamKeys = false,
+		roamValues = false,
+		invalidateInputKey = function(self): ()
+			self._inputKeyState:set(self.inputKey)
+		end,
+		invalidateInputValue = function(self): ()
+			self._inputValueState:set(self.inputValue)
+		end,
+		useOutputPair = function(self, use)
+			local pair = use(self._outputPairState)
+			return pair.key, pair.value
+		end
+	}
+}
+
+local function SubObject&lt;KI, KO, VI, VO, S&gt;(
+	scope: Types.Scope&lt;S&gt;,
+	initialKey: KI,
+	initialValue: VI,
+	processor: (Types.Use, Types.Scope&lt;S&gt;, KI, VI) -&gt; (KO, VO)
+): ForTypes.SubObject&lt;S, KI, KO, VI, VO&gt;
+	local self = {}
+	self.maybeScope = scope
+	self.inputKey = initialKey
+	self.inputValue = initialValue
+	self._inputKeyState = Value(scope, initialKey)
+	self._inputValueState = Value(scope, initialValue)
+	self._processor = processor
+	self._outputPairState = Computed(scope, function(use, scope): {key: KO?, value: VO?}
+		local inputKey = use(self._inputKeyState)
+		local inputValue = use(self._inputValueState)
+		local ok, outputKey, outputValue = xpcall(self._processor, parseError, use, scope, inputKey, inputValue)
+		if ok then
+			return {key = outputKey, value = outputValue}
+		else
+			local error: Types.Error = outputKey :: any
+			error.context = `while processing key {tostring(inputValue)} and value {tostring(inputValue)}`
+			External.logErrorNonFatal("callbackError", error)
+			doCleanup(scope)
+			table.clear(scope)
+			return {key = nil, value = nil}
+		end
+	end)
+	return setmetatable(self, SUB_OBJECT_META) :: any
+end
+
+local function ForPairs&lt;KI, KO, VI, VO, S&gt;(
+	scope: Types.Scope&lt;S&gt;,
+	inputTable: Types.UsedAs&lt;{[KI]: VI}&gt;,
+	processor: (Types.Use, Types.Scope&lt;S&gt;, KI, VI) -&gt; (KO, VO),
+	destructor: unknown?
+): Types.For&lt;KO, VO&gt;
+	if typeof(inputTable) == "function" then
+		External.logError("scopeMissing", nil, "ForPairs", "myScope:ForPairs(inputTable, function(scope, use, key, value) ... end)")
+	elseif destructor ~= nil then
+		External.logWarn("destructorRedundant", "ForPairs")
+	end
+	return For(
+		scope,
+		inputTable,
+		function(scope, initialKey, initialValue)
+			return SubObject(scope, initialKey, initialValue, processor)
+		end
+	)
+end
+
+return ForPairs :: Types.ForPairsConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX64">
+          <Properties>
+            <string name="Name">ForValues</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Constructs and returns a new For state object which processes values and
+	preserves keys.
+
+	https://elttob.uk/Fusion/0.3/api-reference/state/members/forvalues/
+
+	TODO: the sub objects constructed here can be more efficiently implemented
+	as a dedicated state object.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- State
+local For = require(Package.State.For)
+local Value = require(Package.State.Value)
+local Computed = require(Package.State.Computed)
+local ForTypes = require(Package.State.For.ForTypes)
+-- Logging
+local parseError = require(Package.Logging.parseError)
+-- Memory
+local doCleanup = require(Package.Memory.doCleanup)
+
+local SUB_OBJECT_META = {
+	__index = {
+		roamKeys = true,
+		roamValues = false,
+		invalidateInputKey = function(self): ()
+			-- do nothing
+		end,
+		invalidateInputValue = function(self): ()
+			self._inputValueState:set(self.inputValue)
+		end,
+		useOutputPair = function(self, use)
+			return self.inputKey, use(self._outputValueState)
+		end
+	}
+}
+
+local function SubObject&lt;K, VI, VO, S&gt;(
+	scope: Types.Scope&lt;S&gt;,
+	initialKey: K,
+	initialValue: VI,
+	processor: (Types.Use, Types.Scope&lt;S&gt;, VI) -&gt; VO
+): ForTypes.SubObject&lt;S, K, K, VI, VO&gt;
+	local self = {}
+	self.maybeScope = scope
+	self.inputKey = initialKey
+	self.inputValue = initialValue
+	self._inputValueState = Value(scope, initialValue)
+	self._processor = processor
+	self._outputValueState = Computed(scope, function(use, scope): VO?
+		local inputValue = use(self._inputValueState)
+		local ok, outputValue = xpcall(self._processor, parseError, use, scope, inputValue)
+		if ok then
+			return outputValue
+		else
+			local error: Types.Error = outputValue :: any
+			error.context = `while processing value {tostring(inputValue)}`
+			External.logErrorNonFatal("callbackError", error)
+			doCleanup(scope)
+			table.clear(scope)
+			return nil
+		end
+	end)
+	return setmetatable(self, SUB_OBJECT_META) :: any
+end
+
+local function ForValues&lt;K, VI, VO, S&gt;(
+	scope: Types.Scope&lt;S&gt;,
+	inputTable: Types.UsedAs&lt;{[K]: VI}&gt;,
+	processor: (Types.Use, Types.Scope&lt;S&gt;, VI) -&gt; VO,
+	destructor: unknown?
+): Types.For&lt;K, VO&gt;
+	if typeof(inputTable) == "function" then
+		External.logError("scopeMissing", nil, "ForValues", "myScope:ForValues(inputTable, function(scope, use, value) ... end)")
+	elseif destructor ~= nil then
+		External.logWarn("destructorRedundant", "ForValues")
+	end
+	return For(
+		scope,
+		inputTable,
+		function(scope, initialKey, initialValue)
+			return SubObject(scope, initialKey, initialValue, processor)
+		end
+	)
+end
+
+return ForValues :: Types.ForValuesConstructor</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX65">
+          <Properties>
+            <string name="Name">peek</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Extracts a value of type T from its input.
+
+	https://elttob.uk/Fusion/0.3/api-reference/state/members/peek/
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+-- State
+local castToState = require(Package.State.castToState)
+-- Graph
+local evaluate = require(Package.Graph.evaluate)
+
+local function peek&lt;T&gt;(
+	target: Types.UsedAs&lt;T&gt;
+): T
+	local targetState = castToState(target)
+	if targetState ~= nil then
+		evaluate(targetState, false)
+		return targetState._EXTREMELY_DANGEROUS_usedAsValue :: T
+	else
+		return target :: T
+	end
+end
+
+return peek</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX66">
+          <Properties>
+            <string name="Name">updateAll</string>
+            <ProtectedString name="Source">return nil -- dummy file so I can write tests</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX67">
+          <Properties>
+            <string name="Name">Value</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	A state object which allows regular Luau code to control its value.
+
+	https://elttob.uk/Fusion/0.3/api-reference/state/types/value/
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Graph
+local change = require(Package.Graph.change)
+-- Utility
+local isSimilar = require(Package.Utility.isSimilar)
+local never = require(Package.Utility.never)
+local nicknames = require(Package.Utility.nicknames)
+
+type Self&lt;T, S&gt; = Types.Value&lt;T, S&gt;
+
+local class = {}
+class.type = "State"
+class.kind = "Value"
+class.timeliness = "lazy"
+class.dependencySet = table.freeze {}
+
+local METATABLE = table.freeze {__index = class}
+
+local function Value&lt;T&gt;(
+	scope: Types.Scope&lt;unknown&gt;,
+	initialValue: T
+): Types.Value&lt;T, any&gt;
+	local createdAt = os.clock()
+	if initialValue == nil and (typeof(scope) ~= "table" or (scope[1] == nil and next(scope) ~= nil)) then
+		External.logError("scopeMissing", nil, "Value", "myScope:Value(initialValue)")
+	end
+	local self: Self&lt;T, any&gt; = setmetatable(
+		{
+			createdAt = createdAt,
+			dependentSet = {},
+			lastChange = os.clock(),
+			scope = scope,
+			validity = "valid",
+			_EXTREMELY_DANGEROUS_usedAsValue = initialValue
+		}, 
+		METATABLE
+	) :: any
+	local destroy = function()
+		self.scope = nil
+	end
+	self.oldestTask = destroy
+	nicknames[self.oldestTask] = "Value"
+	table.insert(scope, destroy)
+	return self
+end
+
+function class:get&lt;T, S&gt;(
+	_self: Self&lt;T, S&gt;
+): never
+	External.logError("stateGetWasRemoved")
+	return never()
+end
+
+function class.set&lt;T, S&gt;(
+	self: Self&lt;T, S&gt;,
+	newValue: S
+): S
+	local oldValue = self._EXTREMELY_DANGEROUS_usedAsValue
+	if not isSimilar(oldValue, newValue) then
+		self._EXTREMELY_DANGEROUS_usedAsValue = newValue :: any
+		change(self)
+	end
+	return newValue
+end
+
+function class._evaluate&lt;T, S&gt;(
+	_self: Self&lt;T, S&gt;
+): boolean
+	-- The similarity test is done in advance when the value is set, so this
+	-- should be fine.
+	return true
+end
+
+table.freeze(class)
+return Value :: Types.ValueConstructor</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="RBX68">
+        <Properties>
+          <string name="Name">Types</string>
+          <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Stores common public-facing type information for Fusion APIs.
+]]
+
+export type Error = {
+	type: "Error",
+	raw: string,
+	message: string,
+	trace: string,
+	context: string?
+}
+
+-- Types that can be expressed as vectors of numbers, and so can be animated.
+export type Animatable =
+	number |
+	CFrame |
+	Color3 |
+	ColorSequenceKeypoint |
+	DateTime |
+	NumberRange |
+	NumberSequenceKeypoint |
+	PhysicalProperties |
+	Ray |
+	Rect |
+	Region3 |
+	Region3int16 |
+	UDim |
+	UDim2 |
+	Vector2 |
+	Vector2int16 |
+	Vector3 |
+	Vector3int16
+
+-- A task which can be accepted for cleanup.
+export type Task =
+	Instance |
+	RBXScriptConnection |
+	() -&gt; () |
+	{destroy: (unknown) -&gt; ()} |
+	{Destroy: (unknown) -&gt; ()} |
+	{Task}
+
+-- A scope of tasks to clean up.
+export type Scope&lt;Constructors = any&gt; = {Task} &amp; Constructors
+
+-- An object which uses a scope to dictate how long it lives.
+export type ScopedObject = {
+	scope: Scope&lt;unknown&gt;?,
+	oldestTask: unknown
+}
+
+-- Script-readable version information.
+export type Version = {
+	major: number,
+	minor: number,
+	isRelease: boolean
+}
+
+-- An object which stores a value scoped in time.
+export type Contextual&lt;T&gt; = {
+	type: "Contextual",
+	now: (Contextual&lt;T&gt;) -&gt; T,
+	is: (Contextual&lt;T&gt;, T) -&gt; ContextualIsMethods
+}
+
+type ContextualIsMethods = {
+	during: &lt;R, A...&gt;(ContextualIsMethods, (A...) -&gt; R, A...) -&gt; R
+}
+
+-- A graph object which can have dependencies and dependencies.
+export type GraphObject = ScopedObject &amp; {
+	createdAt: number,
+	dependencySet: {[GraphObject]: unknown},
+	dependentSet: {[GraphObject]: unknown},
+	lastChange: number?,
+	timeliness: "lazy" | "eager",
+	validity: "valid" | "invalid" | "busy",
+	_evaluate: (GraphObject) -&gt; boolean
+}
+
+-- An object which stores a piece of reactive state.
+export type StateObject&lt;T&gt; = GraphObject &amp; {
+	type: "State",
+	kind: string,
+	_EXTREMELY_DANGEROUS_usedAsValue: T
+}
+
+-- Passing values of this type to `Use` returns `T`.
+export type UsedAs&lt;T&gt; = StateObject&lt;T&gt; | T
+
+-- Function signature for use callbacks.
+export type Use = &lt;T&gt;(target: UsedAs&lt;T&gt;) -&gt; T
+
+-- A state object whose value can be set at any time by the user.
+export type Value&lt;T, S = T&gt; = StateObject&lt;T&gt; &amp; {
+	kind: "State",
+	timeliness: "lazy",
+ 	set: (Value&lt;T, S&gt;, newValue: S, force: boolean?) -&gt; S,
+	____phantom_setType: (never) -&gt; S -- phantom data so this contains S
+}
+export type ValueConstructor = &lt;T&gt;(
+	scope: Scope&lt;unknown&gt;,
+	initialValue: T
+) -&gt; Value&lt;T, any&gt;
+
+-- A state object whose value is derived from other objects using a callback.
+export type Computed&lt;T&gt; = StateObject&lt;T&gt; &amp; {
+	kind: "Computed",
+	timeliness: "lazy"
+}
+export type ComputedConstructor = &lt;T, S&gt;(
+	scope: S &amp; Scope&lt;unknown&gt;,
+	callback: (Use, S) -&gt; T
+) -&gt; Computed&lt;T&gt;
+
+-- A state object which maps over keys and/or values in another table.
+export type For&lt;KO, VO&gt; = StateObject&lt;{[KO]: VO}&gt;  &amp; {
+	kind: "For"
+}
+export type ForPairsConstructor =  &lt;KI, KO, VI, VO, S&gt;(
+	scope: S &amp; Scope&lt;unknown&gt;,
+	inputTable: UsedAs&lt;{[KI]: VI}&gt;,
+	processor: (Use, S, key: KI, value: VI) -&gt; (KO, VO)
+) -&gt; For&lt;KO, VO&gt;
+export type ForKeysConstructor =  &lt;KI, KO, V, S&gt;(
+	scope: S &amp; Scope&lt;unknown&gt;,
+	inputTable: UsedAs&lt;{[KI]: V}&gt;,
+	processor: (Use, S, key: KI) -&gt; KO
+) -&gt; For&lt;KO, V&gt;
+export type ForValuesConstructor =  &lt;K, VI, VO, S&gt;(
+	scope: S &amp; Scope&lt;unknown&gt;,
+	inputTable: UsedAs&lt;{[K]: VI}&gt;,
+	processor: (Use, S, value: VI) -&gt; VO
+) -&gt; For&lt;K, VO&gt;
+
+-- An object which can listen for updates on another state object.
+export type Observer = GraphObject &amp; {
+	type: "Observer",
+	timeliness: "eager",
+	onChange: (Observer, callback: () -&gt; ()) -&gt; (() -&gt; ()),
+	onBind: (Observer, callback: () -&gt; ()) -&gt; (() -&gt; ())
+}
+export type ObserverConstructor = (
+	scope: Scope&lt;unknown&gt;,
+	watching: unknown
+) -&gt; Observer
+
+-- A state object which follows another state object using tweens.
+export type Tween&lt;T&gt; = StateObject&lt;T&gt; &amp; {
+	kind: "Tween"
+}
+export type TweenConstructor = &lt;T&gt;(
+	scope: Scope&lt;unknown&gt;,
+	goalState: UsedAs&lt;T&gt;,
+	tweenInfo: UsedAs&lt;TweenInfo&gt;?
+) -&gt; Tween&lt;T&gt;
+
+-- A state object which follows another state object using spring simulation.
+export type Spring&lt;T&gt; = StateObject&lt;T&gt;  &amp; {
+	kind: "Spring",
+	setPosition: (Spring&lt;T&gt;, newPosition: T) -&gt; (),
+	setVelocity: (Spring&lt;T&gt;, newVelocity: T) -&gt; (),
+	addVelocity: (Spring&lt;T&gt;, deltaVelocity: T) -&gt; ()
+}
+export type SpringConstructor = &lt;T&gt;(
+	scope: Scope&lt;unknown&gt;,
+	goalState: UsedAs&lt;T&gt;,
+	speed: UsedAs&lt;number&gt;?,
+	damping: UsedAs&lt;number&gt;?
+) -&gt; Spring&lt;T&gt;
+
+-- Denotes children instances in an instance or component's property table.
+export type SpecialKey = {
+	type: "SpecialKey",
+	kind: string,
+	stage: "self" | "descendants" | "ancestor" | "observer",
+	apply: (
+		self: SpecialKey,
+		scope: Scope&lt;unknown&gt;,
+		value: unknown,
+		applyTo: Instance
+	) -&gt; ()
+}
+
+-- A collection of instances that may be parented to another instance.
+export type Child = Instance | StateObject&lt;Child&gt; | {[unknown]: Child}
+
+-- A table that defines an instance's properties, handlers and children.
+export type PropertyTable = {[string | SpecialKey]: unknown}
+
+export type NewConstructor = (
+	scope: Scope&lt;unknown&gt;,
+	className: string
+) -&gt; (propertyTable: PropertyTable) -&gt; Instance
+
+export type HydrateConstructor = (
+	scope: Scope&lt;unknown&gt;,
+	target: Instance
+) -&gt; (propertyTable: PropertyTable) -&gt; Instance
+
+-- Is there a sane way to write out this type?
+-- ... I sure hope so.
+
+export type DeriveScopeConstructor = (&lt;S&gt;(Scope&lt;S&gt;) -&gt; Scope&lt;S&gt;)
+	&amp; (&lt;S, A&gt;(Scope&lt;S&gt;, A &amp; {}) -&gt; Scope&lt;S &amp; A&gt;)
+	&amp; (&lt;S, A, B&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B&gt;)
+	&amp; (&lt;S, A, B, C&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C&gt;)
+	&amp; (&lt;S, A, B, C, D&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D&gt;)
+	&amp; (&lt;S, A, B, C, D, E&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E&gt;)
+	&amp; (&lt;S, A, B, C, D, E, F&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E &amp; F&gt;)
+	&amp; (&lt;S, A, B, C, D, E, F, G&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G&gt;)
+	&amp; (&lt;S, A, B, C, D, E, F, G, H&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H&gt;)
+	&amp; (&lt;S, A, B, C, D, E, F, G, H, I&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I&gt;)
+	&amp; (&lt;S, A, B, C, D, E, F, G, H, I, J&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}, J &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I &amp; J&gt;)
+	&amp; (&lt;S, A, B, C, D, E, F, G, H, I, J, K&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}, J &amp; {}, K &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I &amp; J &amp; K&gt;)
+	&amp; (&lt;S, A, B, C, D, E, F, G, H, I, J, K, L&gt;(Scope&lt;S&gt;, A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}, J &amp; {}, K &amp; {}, L &amp; {}) -&gt; Scope&lt;S &amp; A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I &amp; J &amp; K &amp; L&gt;)
+
+export type ScopedConstructor = (() -&gt; Scope&lt;{}&gt;)
+	&amp; (&lt;A&gt;(A &amp; {}) -&gt; Scope&lt;A&gt;)
+	&amp; (&lt;A, B&gt;(A &amp; {}, B &amp; {}) -&gt; Scope&lt;A &amp; B&gt;)
+	&amp; (&lt;A, B, C&gt;(A &amp; {}, B &amp; {}, C &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C&gt;)
+	&amp; (&lt;A, B, C, D&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D&gt;)
+	&amp; (&lt;A, B, C, D, E&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E&gt;)
+	&amp; (&lt;A, B, C, D, E, F&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E &amp; F&gt;)
+	&amp; (&lt;A, B, C, D, E, F, G&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G&gt;)
+	&amp; (&lt;A, B, C, D, E, F, G, H&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H&gt;)
+	&amp; (&lt;A, B, C, D, E, F, G, H, I&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I&gt;)
+	&amp; (&lt;A, B, C, D, E, F, G, H, I, J&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}, J &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I &amp; J&gt;)
+	&amp; (&lt;A, B, C, D, E, F, G, H, I, J, K&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}, J &amp; {}, K &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I &amp; J &amp; K&gt;)
+	&amp; (&lt;A, B, C, D, E, F, G, H, I, J, K, L&gt;(A &amp; {}, B &amp; {}, C &amp; {}, D &amp; {}, E &amp; {}, F &amp; {}, G &amp; {}, H &amp; {}, I &amp; {}, J &amp; {}, K &amp; {}, L &amp; {}) -&gt; Scope&lt;A &amp; B &amp; C &amp; D &amp; E &amp; F &amp; G &amp; H &amp; I &amp; J &amp; K &amp; L&gt;)
+
+export type ContextualConstructor = &lt;T&gt;(defaultValue: T) -&gt; Contextual&lt;T&gt;
+
+export type Safe = &lt;Success, Fail&gt;(
+	callbacks: {
+		try: () -&gt; Success,
+		fallback: (err: unknown) -&gt; Fail
+	}
+) -&gt; Success | Fail
+
+export type Fusion = {
+	version: Version,
+	Contextual: ContextualConstructor,
+	Safe: Safe,
+
+	doCleanup: (Task) -&gt; (),
+	scoped: ScopedConstructor,
+	deriveScope: DeriveScopeConstructor,
+	innerScope: DeriveScopeConstructor,
+
+	peek: Use,
+	Value: ValueConstructor,
+	Computed: ComputedConstructor,
+	ForPairs: ForPairsConstructor,
+	ForKeys: ForKeysConstructor,
+	ForValues: ForValuesConstructor,
+	Observer: ObserverConstructor,
+
+	Tween: TweenConstructor,
+	Spring: SpringConstructor,
+
+	New: NewConstructor,
+	Hydrate: HydrateConstructor,
+
+	Child: ({Child}) -&gt; Child,
+	Children: SpecialKey,
+	Out: (propertyName: string) -&gt; SpecialKey,
+	OnEvent: (eventName: string) -&gt; SpecialKey,
+	OnChange: (propertyName: string) -&gt; SpecialKey,
+	Attribute: (attributeName: string) -&gt; SpecialKey,
+	AttributeChange: (attributeName: string) -&gt; SpecialKey,
+	AttributeOut: (attributeName: string) -&gt; SpecialKey,
+}
+
+export type ExternalProvider = {
+	policies: {
+		allowWebLinks: boolean
+	},
+
+	logErrorNonFatal: (
+		errorString: string
+	) -&gt; (),
+	logWarn: (
+		errorString: string
+	) -&gt; (),
+	
+	doTaskImmediate: (
+		resume: () -&gt; ()
+	) -&gt; (),
+	doTaskDeferred: (
+		resume: () -&gt; ()
+	) -&gt; (),
+	startScheduler: () -&gt; (),
+	stopScheduler: () -&gt; ()
+}
+
+export type ExternalDebugger = {
+	startDebugging: () -&gt; (),
+	stopDebugging: () -&gt; (),
+
+	trackScope: (
+		scope: Scope&lt;unknown&gt;
+	) -&gt; (),
+	untrackScope: (
+		scope: Scope&lt;unknown&gt;
+	) -&gt; ()
+}
+
+return nil
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="RBX69">
+        <Properties>
+          <string name="Name">Utility</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX70">
+          <Properties>
+            <string name="Name">Contextual</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+    Time-based contextual values, to allow for transparently passing values down
+	the call stack.
+]]
+
+local Package = script.Parent.Parent
+local Types = require(Package.Types)
+local External = require(Package.External)
+-- Logging
+local parseError = require(Package.Logging.parseError)
+
+export type Self&lt;T&gt; = Types.Contextual&lt;T&gt; &amp; {
+	_valuesNow: {[thread]: {value: T}},
+	_defaultValue: T
+}
+
+local class = {}
+class.type = "Contextual"
+
+local METATABLE = table.freeze {__index = class}
+local WEAK_KEYS_METATABLE = table.freeze {__mode = "k"}
+
+local function Contextual&lt;T&gt;(
+	defaultValue: T
+): Types.Contextual&lt;T&gt;
+	local self: Self&lt;T&gt; = setmetatable(
+		{
+			-- if we held strong references to threads here, then if a thread was
+			-- killed before this contextual had a chance to finish executing its
+			-- callback, it would be held strongly in this table forever
+			_valuesNow = setmetatable({}, WEAK_KEYS_METATABLE),
+			_defaultValue = defaultValue
+		}, 
+		METATABLE
+	) :: any
+
+	return self
+end
+
+--[[
+	Returns the current value of this contextual.
+]]
+function class.now&lt;T&gt;(
+	self: Self&lt;T&gt;
+): T
+	local thread = coroutine.running()
+	local value = self._valuesNow[thread]
+	if typeof(value) ~= "table" then
+		return self._defaultValue
+	else
+		return value.value
+	end
+end
+
+--[[
+	Temporarily assigns a value to this contextual.
+]]
+function class.is&lt;T&gt;(
+	self: Self&lt;T&gt;,
+	newValue: T
+)
+	local methods = {}
+	
+	function methods.during&lt;T, A...&gt;(
+		_: any, -- during is called with colon syntax but we don't care
+		callback: (A...) -&gt; T,
+		...: A...
+	): T
+		local thread = coroutine.running()
+		local prevValue = self._valuesNow[thread]
+		-- Storing the value in this format allows us to distinguish storing
+		-- `nil` from not calling `:during()` at all.
+		self._valuesNow[thread] = { value = newValue }
+		local ok, value = xpcall(callback, parseError, ...)
+		self._valuesNow[thread] = prevValue
+		if not ok then
+			External.logError("callbackError", value :: any)
+		end
+		return value
+	end
+
+	return methods
+end
+
+table.freeze(class)
+return Contextual</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX71">
+          <Properties>
+            <string name="Name">isSimilar</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Implements the 'similarity test' used to determine whether two values have
+	a meaningful difference.
+
+	https://elttob.uk/Fusion/0.3/tutorials/best-practices/optimisation/#similarity
+]]
+
+local function isSimilar(
+	a: unknown, 
+	b: unknown
+): boolean
+	local typeA = typeof(a)
+	local isTable = typeA == "table"
+	local isUserdata = typeA == "userdata"
+	return
+		if not (isTable or isUserdata) then
+			a == b or a ~= a and b ~= b
+		elseif typeA == typeof(b) and (isUserdata or table.isfrozen(a :: any) or getmetatable(a :: any) ~= nil) then
+			a == b
+		else
+			false
+end
+
+return isSimilar
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX72">
+          <Properties>
+            <string name="Name">merge</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Attempts to merge a variadic number of tables together.
+]]
+
+local Package = script.Parent.Parent
+local External = require(Package.External)
+
+local function merge(
+	overwrite: boolean,
+	into: {[unknown]: unknown},
+	...: {[unknown]: unknown}
+): {[unknown]: unknown}
+	local fromTables = {...}
+	if #fromTables &lt; 1 then
+		return into
+	else
+		for _, fromTable in fromTables do
+			for key, value in fromTable do
+				if into[key] == nil then
+					into[key] = value
+				elseif not overwrite then
+					External.logError("mergeConflict", nil, tostring(key))
+				end
+			end
+		end
+		return into
+	end
+end
+
+return merge
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX73">
+          <Properties>
+            <string name="Name">nameOf</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Returns the most specific custom name for the given object.
+]]
+
+local Package = script.Parent.Parent
+-- Utility
+local nicknames = require(Package.Utility.nicknames)
+
+local function nameOf(
+	x: unknown,
+	defaultName: string
+): string
+	local nickname = nicknames[x]
+	if typeof(nickname) == "string" then
+		return nickname
+	end
+	if typeof(x) == "table" then
+		local x = x :: {[any]: any}
+		if typeof(x.name) == "string" then
+			return x.name
+		elseif typeof(x.kind) == "string" then
+			return x.kind
+		elseif typeof(x.type) == "string" then
+			return x.type
+		end
+	end
+	return defaultName
+end
+
+return nameOf</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX74">
+          <Properties>
+            <string name="Name">never</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Never returns.
+]]
+
+local function never(): never
+	error("This codepath should not be reachable")
+end
+
+return never</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX75">
+          <Properties>
+            <string name="Name">nicknames</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Stores nicknames for values that don't support metatables, so that `nameOf`
+	can return values for them.
+]]
+
+return setmetatable({}, {__mode = "k"})</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX76">
+          <Properties>
+            <string name="Name">Safe</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+    A variant of xpcall() designed for inline usage, letting you define fallback
+	values based on caught errors.
+]]
+
+local Package = script.Parent.Parent
+
+local function Safe&lt;Success, Fail&gt;(
+	callbacks: {
+		try: () -&gt; Success,
+		fallback: (err: unknown) -&gt; Fail
+	}
+): Success | Fail
+	local _, value = xpcall(callbacks.try, callbacks.fallback)
+	return value
+end
+
+return Safe</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX77">
+          <Properties>
+            <string name="Name">xtypeof</string>
+            <ProtectedString name="Source">--!strict
+--!nolint LocalUnused
+--!nolint LocalShadow
+local task = nil -- Disable usage of Roblox's task scheduler
+
+--[[
+	Extended typeof, designed for identifying custom objects.
+	If given a table with a `type` string, returns that.
+	Otherwise, returns `typeof()` the argument.
+]]
+
+local function xtypeof(
+	x: unknown
+): string
+	local typeString = typeof(x)
+
+	if typeString == "table" then
+		local x = x :: {type: unknown?}
+		if typeof(x.type) == "string" then
+			return x.type
+		end
+	end
+
+	return typeString
+end
+
+return xtypeof</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="RBX78">
+      <Properties>
+        <string name="Name">UIFramework</string>
+      </Properties>
+      <Item class="Folder" referent="RBX79">
+        <Properties>
+          <string name="Name">components</string>
+        </Properties>
+        <Item class="Folder" referent="RBX80">
+          <Properties>
+            <string name="Name">base</string>
+          </Properties>
+          <Item class="ModuleScript" referent="RBX81">
+            <Properties>
+              <string name="Name">Button</string>
+              <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+local theme = require(script.Parent.Parent.Parent.theme)
+
+local OnEvent, Children, peek = Fusion.OnEvent, Fusion.Children, Fusion.peek
+
+export type Props = {
+	Text: Fusion.UsedAs&lt;string&gt;?,
+	Disabled: Fusion.UsedAs&lt;boolean&gt;?,
+	OnClick: (() -&gt; ())?,
+	Size: Fusion.UsedAs&lt;UDim2&gt;?,
+	Position: Fusion.UsedAs&lt;UDim2&gt;?,
+	AnchorPoint: Fusion.UsedAs&lt;Vector2&gt;?,
+	LayoutOrder: Fusion.UsedAs&lt;number&gt;?,
+}
+
+local function Button(scope: Fusion.Scope&lt;any&gt;, props: Props)
+	local hovering = scope:Value(false)
+
+	local targetColor = scope:Computed(function(use)
+		if use(props.Disabled) then
+			return theme.palette.panel
+		end
+		return if use(hovering) then theme.palette.accent else theme.palette.panelLight
+	end)
+
+	return scope:New "TextButton" {
+		Size = props.Size or UDim2.fromOffset(140, 40),
+		Position = props.Position,
+		AnchorPoint = props.AnchorPoint,
+		LayoutOrder = props.LayoutOrder,
+		BackgroundColor3 = scope:Spring(targetColor, 30, 1),
+		Text = props.Text or "Button",
+		TextColor3 = theme.palette.text,
+		FontFace = theme.fontBold,
+		TextSize = theme.textSize,
+		AutoButtonColor = false,
+
+		[OnEvent "MouseEnter"] = function()
+			hovering:set(true)
+		end,
+		[OnEvent "MouseLeave"] = function()
+			hovering:set(false)
+		end,
+		[OnEvent "Activated"] = function()
+			if props.OnClick and not peek(props.Disabled) then
+				props.OnClick()
+			end
+		end,
+
+		[Children] = {
+			scope:New "UICorner" { CornerRadius = theme.corner },
+		},
+	}
+end
+
+return Button
+</ProtectedString>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="RBX82">
+            <Properties>
+              <string name="Name">Button.story</string>
+              <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+local Button = require(script.Parent.Button)
+
+return {
+	fusion = Fusion,
+	controls = {
+		Text = "Buy",
+		Disabled = false,
+	},
+	story = function(props)
+		local scope = props.scope
+		local btn = Button(scope, {
+			Text = props.controls.Text,
+			Disabled = props.controls.Disabled,
+			Position = UDim2.fromScale(0.5, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			OnClick = function()
+				print("Button clicked!")
+			end,
+		})
+		btn.Parent = props.target
+	end,
+}
+</ProtectedString>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="RBX83">
+            <Properties>
+              <string name="Name">Panel</string>
+              <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+local theme = require(script.Parent.Parent.Parent.theme)
+
+local Children = Fusion.Children
+
+export type Props = {
+	Size: Fusion.UsedAs&lt;UDim2&gt;?,
+	Position: Fusion.UsedAs&lt;UDim2&gt;?,
+	AnchorPoint: Fusion.UsedAs&lt;Vector2&gt;?,
+	Name: string?,
+	Content: any?,
+}
+
+local function Panel(scope: Fusion.Scope&lt;any&gt;, props: Props)
+	return scope:New "Frame" {
+		Name = props.Name or "Panel",
+		Size = props.Size or UDim2.fromOffset(320, 240),
+		Position = props.Position,
+		AnchorPoint = props.AnchorPoint,
+		BackgroundColor3 = theme.palette.panel,
+		BorderSizePixel = 0,
+
+		[Children] = {
+			scope:New "UICorner" { CornerRadius = theme.corner },
+			scope:New "UIPadding" {
+				PaddingTop = UDim.new(0, theme.pad),
+				PaddingBottom = UDim.new(0, theme.pad),
+				PaddingLeft = UDim.new(0, theme.pad),
+				PaddingRight = UDim.new(0, theme.pad),
+			},
+			props.Content,
+		},
+	}
+end
+
+return Panel
+</ProtectedString>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="Folder" referent="RBX84">
+          <Properties>
+            <string name="Name">common</string>
+          </Properties>
+          <Item class="ModuleScript" referent="RBX85">
+            <Properties>
+              <string name="Name">ItemCard</string>
+              <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+local theme = require(script.Parent.Parent.Parent.theme)
+local Button = require(script.Parent.Parent.base.Button)
+
+local Children = Fusion.Children
+
+export type Item = {
+	id: number,
+	name: string,
+	price: number,
+}
+
+export type Props = {
+	Item: Item,
+	Owned: Fusion.UsedAs&lt;boolean&gt;?,
+	CanAfford: Fusion.UsedAs&lt;boolean&gt;?,
+	OnBuy: ((Item) -&gt; ())?,
+	LayoutOrder: Fusion.UsedAs&lt;number&gt;?,
+}
+
+local function ItemCard(scope: Fusion.Scope&lt;any&gt;, props: Props)
+	local item = props.Item
+
+	local buyText = scope:Computed(function(use)
+		if use(props.Owned) then
+			return "Owned"
+		end
+		return `Buy · {item.price}`
+	end)
+
+	local disabled = scope:Computed(function(use)
+		return use(props.Owned) or not use(props.CanAfford)
+	end)
+
+	return scope:New "Frame" {
+		Name = item.name,
+		Size = UDim2.new(1, 0, 0, 56),
+		BackgroundColor3 = theme.palette.panelLight,
+		BorderSizePixel = 0,
+		LayoutOrder = props.LayoutOrder or item.id,
+
+		[Children] = {
+			scope:New "UICorner" { CornerRadius = theme.corner },
+			scope:New "TextLabel" {
+				Size = UDim2.new(1, -130, 1, 0),
+				Position = UDim2.fromOffset(theme.pad, 0),
+				BackgroundTransparency = 1,
+				Text = item.name,
+				TextColor3 = theme.palette.text,
+				FontFace = theme.font,
+				TextSize = theme.textSize,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			},
+			Button(scope, {
+				Text = buyText,
+				Disabled = disabled,
+				Size = UDim2.fromOffset(110, 36),
+				Position = UDim2.new(1, -theme.pad, 0.5, 0),
+				AnchorPoint = Vector2.new(1, 0.5),
+				OnClick = function()
+					if props.OnBuy then
+						props.OnBuy(item)
+					end
+				end,
+			}),
+		},
+	}
+end
+
+return ItemCard
+</ProtectedString>
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="RBX86">
+        <Properties>
+          <string name="Name">configs</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX87">
+          <Properties>
+            <string name="Name">items</string>
+            <ProtectedString name="Source">return table.freeze({
+	table.freeze({ id = 1, name = "Iron Sword", price = 50 }),
+	table.freeze({ id = 2, name = "Steel Shield", price = 80 }),
+	table.freeze({ id = 3, name = "Swift Boots", price = 120 }),
+	table.freeze({ id = 4, name = "Ember Charm", price = 200 }),
+	table.freeze({ id = 5, name = "Frost Cloak", price = 320 }),
+	table.freeze({ id = 6, name = "Storm Blade", price = 500 }),
+})
+</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="RBX88">
+        <Properties>
+          <string name="Name">Router</string>
+          <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+
+export type Screen = (scope: Fusion.Scope&lt;any&gt;, props: any) -&gt; Instance
+
+local function Router(appScope: Fusion.Scope&lt;any&gt;, screens: { [string]: Screen }, mountTarget: Instance)
+	local current = appScope:Value(nil :: string?)
+	local screenScope = nil
+
+	local router = {
+		Current = current,
+	}
+
+	function router.Navigate(name: string?, props: any?)
+		if screenScope then
+			Fusion.doCleanup(screenScope)
+			screenScope = nil
+		end
+
+		local screen = if name then screens[name] else nil
+		if not screen then
+			current:set(nil)
+			return
+		end
+
+		screenScope = appScope:innerScope()
+		local ui = screen(screenScope, props or {})
+		ui.Parent = mountTarget
+		current:set(name)
+	end
+
+	function router.Close()
+		router.Navigate(nil)
+	end
+
+	function router.Toggle(name: string, props: any?)
+		if Fusion.peek(current) == name then
+			router.Close()
+		else
+			router.Navigate(name, props)
+		end
+	end
+
+	return router
+end
+
+return Router
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="RBX89">
+        <Properties>
+          <string name="Name">screens</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX90">
+          <Properties>
+            <string name="Name">HubScreen</string>
+            <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+local theme = require(script.Parent.Parent.theme)
+local Panel = require(script.Parent.Parent.components.base.Panel)
+
+local Children = Fusion.Children
+
+local function HubScreen(scope: Fusion.Scope&lt;any&gt;, props: { Stores: any })
+	local player = props.Stores.Player
+
+	return Panel(scope, {
+		Name = "HubScreen",
+		Size = UDim2.fromOffset(360, 160),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Content = {
+			scope:New "TextLabel" {
+				Size = UDim2.new(1, 0, 0, 32),
+				BackgroundTransparency = 1,
+				Text = "Welcome back!",
+				TextColor3 = theme.palette.text,
+				FontFace = theme.fontBold,
+				TextSize = 22,
+			},
+			scope:New "TextLabel" {
+				Size = UDim2.new(1, 0, 0, 24),
+				Position = UDim2.fromOffset(0, 40),
+				BackgroundTransparency = 1,
+				Text = scope:Computed(function(use)
+					return `Level {use(player.Level)} · {use(player.Coins)} coins`
+				end),
+				TextColor3 = theme.palette.textDim,
+				FontFace = theme.font,
+				TextSize = theme.textSize,
+			},
+			scope:New "TextLabel" {
+				Size = UDim2.new(1, 0, 0, 40),
+				Position = UDim2.fromOffset(0, 80),
+				BackgroundTransparency = 1,
+				Text = "Open the shop and buy something — ownership and affordability are reactive.",
+				TextColor3 = theme.palette.textDim,
+				FontFace = theme.font,
+				TextSize = 14,
+				TextWrapped = true,
+			},
+		},
+	})
+end
+
+return HubScreen
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="RBX91">
+          <Properties>
+            <string name="Name">ShopScreen</string>
+            <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+local theme = require(script.Parent.Parent.theme)
+local Panel = require(script.Parent.Parent.components.base.Panel)
+local ItemCard = require(script.Parent.Parent.components.common.ItemCard)
+local items = require(script.Parent.Parent.configs.items)
+
+local Children = Fusion.Children
+
+local function ShopScreen(scope: Fusion.Scope&lt;any&gt;, props: { Stores: any })
+	local player = props.Stores.Player
+
+	local itemState = scope:Value(items)
+
+	local cards = scope:ForValues(itemState, function(use, itemScope, item)
+		return ItemCard(itemScope, {
+			Item = item,
+			Owned = itemScope:Computed(function(use2)
+				return table.find(use2(player.OwnedIds), item.id) ~= nil
+			end),
+			CanAfford = itemScope:Computed(function(use2)
+				return use2(player.Coins) &gt;= item.price
+			end),
+			OnBuy = function(bought)
+				if player.Spend(bought.price) then
+					player.AddOwned(bought.id)
+				end
+			end,
+		})
+	end)
+
+	return Panel(scope, {
+		Name = "ShopScreen",
+		Size = UDim2.fromOffset(420, 460),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Content = {
+			scope:New "TextLabel" {
+				Size = UDim2.new(1, 0, 0, 28),
+				BackgroundTransparency = 1,
+				Text = "Shop",
+				TextColor3 = theme.palette.text,
+				FontFace = theme.fontBold,
+				TextSize = 20,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			},
+			scope:New "ScrollingFrame" {
+				Size = UDim2.new(1, 0, 1, -36),
+				Position = UDim2.fromOffset(0, 36),
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				CanvasSize = UDim2.new(),
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				ScrollBarThickness = 4,
+				[Children] = {
+					scope:New "UIListLayout" {
+						Padding = UDim.new(0, 6),
+						SortOrder = Enum.SortOrder.LayoutOrder,
+					},
+					cards,
+				},
+			},
+		},
+	})
+end
+
+return ShopScreen
+</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="RBX92">
+        <Properties>
+          <string name="Name">stores</string>
+        </Properties>
+        <Item class="ModuleScript" referent="RBX93">
+          <Properties>
+            <string name="Name">PlayerStore</string>
+            <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fusion = require(ReplicatedStorage.Fusion)
+local peek = Fusion.peek
+
+export type Snapshot = {
+	Coins: number,
+	Level: number,
+	OwnedIds: { number },
+}
+
+local function PlayerStore(scope: Fusion.Scope&lt;any&gt;)
+	local coins = scope:Value(0)
+	local level = scope:Value(1)
+	local ownedIds = scope:Value(table.freeze({}))
+
+	local store = {
+		Coins = coins,
+		Level = level,
+		OwnedIds = ownedIds,
+	}
+
+	function store.ApplySnapshot(data: Snapshot)
+		coins:set(data.Coins)
+		level:set(data.Level)
+		ownedIds:set(table.freeze(table.clone(data.OwnedIds)))
+	end
+
+	function store.Earn(amount: number)
+		coins:set(peek(coins) + amount)
+	end
+
+	function store.Spend(amount: number): boolean
+		local current = peek(coins)
+		if current &lt; amount then
+			return false
+		end
+		coins:set(current - amount)
+		return true
+	end
+
+	function store.AddOwned(id: number)
+		local next = table.clone(peek(ownedIds))
+		table.insert(next, id)
+		ownedIds:set(table.freeze(next))
+	end
+
+	return store
+end
+
+return PlayerStore
+</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="RBX94">
+        <Properties>
+          <string name="Name">theme</string>
+          <ProtectedString name="Source">local theme = {
+	palette = table.freeze({
+		bg = Color3.fromRGB(24, 26, 32),
+		panel = Color3.fromRGB(34, 38, 47),
+		panelLight = Color3.fromRGB(45, 50, 61),
+		accent = Color3.fromRGB(88, 182, 226),
+		text = Color3.fromRGB(235, 240, 245),
+		textDim = Color3.fromRGB(150, 160, 172),
+		danger = Color3.fromRGB(226, 96, 96),
+		success = Color3.fromRGB(112, 200, 128),
+	}),
+	font = Font.fromEnum(Enum.Font.GothamMedium),
+	fontBold = Font.fromEnum(Enum.Font.GothamBold),
+	corner = UDim.new(0, 8),
+	pad = 10,
+	textSize = 16,
+}
+
+return table.freeze(theme)
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="RBX95">
+    <Properties><string name="Name">StarterPlayer</string></Properties>
+    <Item class="StarterPlayerScripts" referent="RBX96">
+      <Properties><string name="Name">StarterPlayerScripts</string></Properties>
+      <Item class="LocalScript" referent="RBX97">
+        <Properties>
+          <string name="Name">App</string>
+          <ProtectedString name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local Fusion = require(ReplicatedStorage.Fusion)
+local UI = ReplicatedStorage.UIFramework
+
+local theme = require(UI.theme)
+local Button = require(UI.components.base.Button)
+local Panel = require(UI.components.base.Panel)
+local PlayerStore = require(UI.stores.PlayerStore)
+local Router = require(UI.Router)
+local HubScreen = require(UI.screens.HubScreen)
+local ShopScreen = require(UI.screens.ShopScreen)
+
+local scoped = Fusion.scoped
+local Children = Fusion.Children
+
+local scope = scoped(Fusion, {
+	Button = Button,
+	Panel = Panel,
+})
+
+local stores = {
+	Player = PlayerStore(scope),
+}
+
+local gui = scope:New "ScreenGui" {
+	Name = "FusionApp",
+	ResetOnSpawn = false,
+	IgnoreGuiInset = true,
+}
+gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local screenHost = scope:New "Frame" {
+	Name = "ScreenHost",
+	Size = UDim2.fromScale(1, 1),
+	BackgroundTransparency = 1,
+}
+screenHost.Parent = gui
+
+local router = Router(scope, {
+	Hub = function(s, p)
+		return HubScreen(s, { Stores = stores })
+	end,
+	Shop = function(s, p)
+		return ShopScreen(s, { Stores = stores })
+	end,
+}, screenHost)
+
+local hud = scope:New "Frame" {
+	Name = "HUD",
+	Size = UDim2.new(1, 0, 0, 56),
+	BackgroundColor3 = theme.palette.bg,
+	BorderSizePixel = 0,
+	[Children] = {
+		scope:New "TextLabel" {
+			Name = "CoinLabel",
+			Size = UDim2.fromOffset(180, 36),
+			Position = UDim2.new(0, theme.pad, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			Text = scope:Computed(function(use)
+				return `⛁ {use(stores.Player.Coins)}`
+			end),
+			TextColor3 = theme.palette.accent,
+			FontFace = theme.fontBold,
+			TextSize = 20,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		},
+		scope:New "Frame" {
+			Size = UDim2.new(0, 300, 1, 0),
+			Position = UDim2.new(1, -theme.pad, 0, 0),
+			AnchorPoint = Vector2.new(1, 0),
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New "UIListLayout" {
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalAlignment = Enum.HorizontalAlignment.Right,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					Padding = UDim.new(0, 8),
+				},
+				scope:Button {
+					Text = "Hub",
+					Size = UDim2.fromOffset(90, 36),
+					OnClick = function()
+						router.Navigate("Hub")
+					end,
+				},
+				scope:Button {
+					Text = "Shop",
+					Size = UDim2.fromOffset(90, 36),
+					OnClick = function()
+						router.Toggle("Shop")
+					end,
+				},
+			},
+		},
+	},
+}
+hud.Parent = gui
+
+task.spawn(function()
+	stores.Player.ApplySnapshot({ Coins = 100, Level = 3, OwnedIds = {} })
+	while task.wait(1) do
+		stores.Player.Earn(5)
+	end
+end)
+
+router.Navigate("Hub")
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+</roblox>

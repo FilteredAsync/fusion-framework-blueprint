@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fusion 0.3 UI framework blueprint</title>
+<style>*{box-sizing:border-box}html,body{margin:0;padding:0}</style>
+</head>
+<body>
+<style>
+  :root {
+    --paper: #FBFCFD;
+    --ink: #1B232B;
+    --muted: #5A6774;
+    --accent: #0B7285;
+    --accent-ink: #085566;
+    --code-bg: #14181D;
+    --code-ink: #D9E1E8;
+    --code-dim: #7E8A96;
+    --line: #DCE3E8;
+    --verified: #1B7A3D;
+    --verified-bg: #E8F4EC;
+    --docs-bg: #E6F2F5;
+    --synth: #8A5A08;
+    --synth-bg: #F7EFDD;
+    --display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --body: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+    --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", monospace;
+  }
+  .fb { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; padding: 3.5rem 1.5rem 5rem; }
+  .fb .wrap { max-width: 74ch; margin: 0 auto; }
+  .fb h1, .fb h2, .fb h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; }
+  .fb h1 { font-size: 2.3rem; font-weight: 700; letter-spacing: -0.02em; margin: 0.4rem 0 0.8rem; }
+  .fb h2 { font-size: 1.45rem; font-weight: 650; letter-spacing: -0.01em; margin: 3rem 0 0.8rem; padding-top: 1.6rem; border-top: 1px solid var(--line); }
+  .fb h3 { font-size: 1.08rem; font-weight: 650; margin: 1.8rem 0 0.5rem; }
+  .fb p { margin: 0 0 1rem; }
+  .fb .eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+  .fb .kicker { color: var(--muted); font-size: 1.05rem; margin-bottom: 0; }
+  .fb .meta { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); margin-top: 1.2rem; }
+  .fb a { color: var(--accent-ink); text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset: 2px; }
+  .fb code { font-family: var(--mono); font-size: 0.86em; background: #EEF2F5; border-radius: 3px; padding: 0.08em 0.35em; }
+  .fb pre { background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 1rem 1.2rem; overflow-x: auto; margin: 1.1rem 0 1.4rem; font-size: 0.82rem; line-height: 1.6; }
+  .fb pre code { background: none; padding: 0; font-size: 1em; color: inherit; }
+  .fb pre .cm { color: var(--code-dim); }
+  .fb .badge { display: inline-block; font-family: var(--mono); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 3px; padding: 0.15em 0.5em; vertical-align: 0.15em; margin-right: 0.4rem; }
+  .fb .b-ver { color: var(--verified); background: var(--verified-bg); }
+  .fb .b-doc { color: var(--accent-ink); background: var(--docs-bg); }
+  .fb .b-syn { color: var(--synth); background: var(--synth-bg); }
+  .fb .b-lab { color: #FFFFFF; background: var(--accent); }
+  .fb .lab { border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); background: #F4F9FA; border-radius: 8px; padding: 0.85rem 1.1rem; margin: 1.1rem 0 1.4rem; font-size: 0.93rem; }
+  .fb .lab .lab-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 0.4rem; }
+  .fb .lab ul { margin-bottom: 0; }
+  .fb .legend { display: flex; flex-wrap: wrap; gap: 0.7rem 1.6rem; border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1.1rem; margin: 1.6rem 0 0; font-size: 0.88rem; color: var(--muted); }
+  .fb .legend > div { flex: 1 1 200px; min-width: 180px; }
+  .fb table { border-collapse: collapse; width: 100%; font-size: 0.88rem; font-family: var(--display); }
+  .fb .tablewrap { overflow-x: auto; margin: 1.1rem 0 1.4rem; border: 1px solid var(--line); border-radius: 8px; }
+  .fb th { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; text-align: left; color: var(--muted); padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--line); background: #F3F6F8; }
+  .fb td { padding: 0.55rem 0.9rem; border-bottom: 1px solid #ECF0F3; vertical-align: top; }
+  .fb tr:last-child td { border-bottom: none; }
+  .fb .toc { font-family: var(--display); font-size: 0.92rem; columns: 2; column-gap: 2.5rem; margin: 1rem 0 0; padding: 0; list-style: none; counter-reset: toc; }
+  .fb .toc li { counter-increment: toc; margin-bottom: 0.35rem; break-inside: avoid; }
+  .fb .toc li::before { content: counter(toc, decimal-leading-zero); font-family: var(--mono); font-size: 0.72rem; color: var(--accent); margin-right: 0.6rem; }
+  .fb .toc a { text-decoration: none; color: var(--ink); }
+  .fb .toc a:hover { color: var(--accent-ink); }
+  .fb .rule-card { border-left: 3px solid var(--accent); background: #F2F7F9; border-radius: 0 8px 8px 0; padding: 0.85rem 1.1rem; margin: 1.1rem 0 1.4rem; font-size: 0.95rem; }
+  .fb .rule-card strong { font-family: var(--display); }
+  .fb ul, .fb ol { padding-left: 1.4rem; margin: 0 0 1rem; }
+  .fb li { margin-bottom: 0.4rem; }
+  .fb .src { font-size: 0.8rem; color: var(--muted); font-family: var(--display); margin-top: -0.6rem; }
+  .fb .footer-note { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1.2rem; font-size: 0.85rem; color: var(--muted); font-family: var(--display); }
+  @media (max-width: 640px) { .fb .toc { columns: 1; } .fb h1 { font-size: 1.8rem; } }
+</style>
+<div class="fb"><div class="wrap">
+
+<span class="eyebrow">Architecture blueprint · adversarially verified research</span>
+<h1>Building a game UI framework on Fusion 0.3</h1>
+<p class="kicker">How to organize, state-manage, and structure fully code-authored Roblox UI on Fusion: from primary sources, with every load-bearing claim verified against the current release.</p>
+<p class="meta">Compiled 2026-07-04 · 103 research agents · 15 sources fetched · 11 core findings, each surviving 3-of-3 adversarial verification votes · expanded same day with two empirical lab passes (16 test groups) against real Fusion v0.3-beta in Roblox Studio · UI-Labs workbench chapter added from primary docs</p>
+
+<div class="legend">
+  <div><span class="badge b-ver">verified 3–0</span> Claim survived three independent adversarial refutation attempts against primary sources.</div>
+  <div><span class="badge b-doc">official docs</span> Read directly from the Fusion 0.3 documentation or repository during compilation.</div>
+  <div><span class="badge b-syn">synthesis</span> Recommended pattern derived from verified primitives; sound reasoning, but no external codebase was verified using it.</div>
+  <div><span class="badge b-lab">lab tested</span> Executed against Fusion v0.3-beta installed from source in a clean Studio place; numbers are measured, not quoted. Timings are single-threaded Studio edit-mode figures; treat as directional.</div>
+</div>
+
+<h2 id="toc">Contents</h2>
+<ol class="toc">
+  <li><a href="#version">Version reality check</a></li>
+  <li><a href="#scopes">Scopes: the core mental model</a></li>
+  <li><a href="#state">State primitives</a></li>
+  <li><a href="#components">Component conventions</a></li>
+  <li><a href="#org">Project organization</a></li>
+  <li><a href="#stores">Stores and server data</a></li>
+  <li><a href="#instances">Instances and bindings</a></li>
+  <li><a href="#lists">List rendering</a></li>
+  <li><a href="#animation">Animation</a></li>
+  <li><a href="#perf">Performance</a></li>
+  <li><a href="#routing">Screens and routing</a></li>
+  <li><a href="#migration">0.2 → 0.3 translation table</a></li>
+  <li><a href="#alternatives">Context: React-lua and Vide</a></li>
+  <li><a href="#uilabs">Component workbench: UI-Labs</a></li>
+  <li><a href="#template">The template place</a></li>
+  <li><a href="#open">Open questions</a></li>
+</ol>
+
+<h2 id="version">1 · Version reality check</h2>
+<p><span class="badge b-ver">verified 3–0</span>The current release of Fusion is <strong>v0.3-beta</strong>, published 2024-08-30: GitHub's designated "Latest" and the only non-prerelease tag. A 0.4 exists only as an unreleased dev line (<code>0.4.0-dev1</code> in <code>wally.toml</code>) with draft docs. Everything in this report targets 0.3.</p>
+<p class="src">Sources: <a href="https://github.com/dphfox/Fusion/releases">dphfox/Fusion releases</a>, <a href="https://github.com/dphfox/Fusion">repo</a></p>
+<p>This matters more than it sounds: <strong>most community material (tutorials, DevForum answers, and the two best open-source component libraries) targets 0.2 and will not run on 0.3.</strong> The instant staleness markers:</p>
+<div class="tablewrap"><table>
+  <tr><th>If you see…</th><th>It's 0.2-era, translate to…</th></tr>
+  <tr><td><code>someValue:get()</code></td><td><code>use(someValue)</code> inside computeds; <code>peek(someValue)</code> elsewhere. <code>:get()</code> now throws <code>stateGetWasRemoved</code>.</td></tr>
+  <tr><td><code>Value(x)</code>, <code>Computed(fn)</code> with no scope</td><td><code>scope:Value(x)</code>, <code>scope:Computed(fn)</code>: every constructor takes a scope first.</td></tr>
+  <tr><td>Destructors, <code>[Cleanup]</code>, Maid modules</td><td>Scopes + <code>doCleanup</code> replace all of it.</td></tr>
+  <tr><td><code>CanBeState&lt;T&gt;</code></td><td><code>UsedAs&lt;T&gt;</code></td></tr>
+  <tr><td><code>ComputedPairs</code></td><td><code>ForPairs</code> / <code>ForValues</code> / <code>ForKeys</code></td></tr>
+  <tr><td><code>[Ref]</code></td><td>Removed. Constructors return the instance; use <code>[Out]</code> for reading properties back.</td></tr>
+</table></div>
+<p><span class="badge b-ver">verified 3–0</span>Both flagship open-source component libraries, <a href="https://github.com/virtualbutfake/fusion-components">fusion-components</a> (pins <code>fusion@0.2.0</code>, last push Dec 2024) and <a href="https://github.com/mvyasu/PluginEssentials">PluginEssentials</a> ("Fusion v0.2 components", dormant since Nov 2023), are 0.2 codebases. Their <em>conventions</em> are excellent and adopted below; their <em>code</em> must be translated. Also verified: <code>devsarim/roblox-project-template</code>, often cited as a Fusion example, is actually Roact + Rodux, not a Fusion exemplar at all.</p>
+
+<h2 id="scopes">2 · Scopes: the core mental model</h2>
+<p><span class="badge b-ver">verified 3–0</span>Fusion 0.3's foundational primitive is the <strong>scope</strong>: a plain Luau array that groups objects for collective destruction. The author describes it as a generalization of the Maid pattern, with automatic "time travelling" lifetime analysis (the <code>possiblyOutlives</code> warning fires when a value could outlive something it depends on). Every stateful constructor (<code>Value</code>, <code>Computed</code>, <code>Observer</code>, For-objects, <code>Tween</code>, <code>Spring</code>, <code>New</code>, <code>Hydrate</code>) takes a scope as its first argument. The sole exception is <code>Contextual</code>, which is non-destructible.</p>
+<p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/tutorials/fundamentals/scopes/">scopes tutorial</a>, <a href="https://github.com/dphfox/Fusion/releases">0.3 release notes</a>, <a href="https://github.com/dphfox/Fusion/discussions/292">discussion #292</a></p>
+<pre><code><span class="cm">-- The idiomatic setup. scoped() makes constructors callable as methods.</span>
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local scoped, peek, doCleanup = Fusion.scoped, Fusion.peek, Fusion.doCleanup
+
+local scope = scoped(Fusion)
+local health = scope:Value(100)
+local label = scope:Computed(function(use)
+    return `HP: {use(health)}`
+end)
+
+doCleanup(scope) <span class="cm">-- everything above is destroyed, reverse order</span></code></pre>
+<p><span class="badge b-ver">verified 3–0</span>Three scope constructors with distinct lifetime semantics:</p>
+<ul>
+  <li><code>scoped(Fusion, ...)</code>: new root scope; passed tables become method tables. The docs explicitly recommend this syntax.</li>
+  <li><code>scope:innerScope()</code>: child scope, destroyed automatically with its parent but cleanable early. Documented as "often the safest choice for creating new scopes." This is your screen/feature lifetime tool.</li>
+  <li><code>scope.deriveScope</code>: copies the <em>method table</em> only; the result has a completely independent lifecycle. Use when you need the same conveniences without tying lifetimes.</li>
+</ul>
+<p><span class="badge b-ver">verified 3–0</span><code>doCleanup</code> disposes of contents in <strong>reverse creation order</strong> and dispatches on type: functions are called, objects with <code>:destroy()</code>/<code>:Destroy()</code> have it called, Instances are destroyed, connections disconnected, nested tables recursed. The hard constraint: destroyed content is <em>irrecoverable</em>. The docs say to remove all references and never use them again.</p>
+<div class="lab"><div class="lab-title">Lab results: scopes</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span>Reverse-order cleanup confirmed: three tasks inserted A→B→C ran C→B→A. <code>innerScope</code> contents died with the parent; <code>deriveScope</code> contents survived parent cleanup and required their own <code>doCleanup</code>, exactly as documented.</li>
+  <li><strong>Destruction is silent.</strong> Calling <code>:set()</code> or <code>peek()</code> on a destroyed <code>Value</code> raised <em>no error</em>: both no-op quietly. "Irrecoverable" does not mean "loud": Fusion will not tell you you're using a dead object. The only loud failure is 0.2-style <code>:get()</code>, which throws <code>[Fusion] `StateObject:get()` has been replaced by `use()` and `peek()`</code>. Treat use-after-destroy as a bug class your framework's structure must prevent, because the runtime won't catch it.</li>
+  <li>The <code>possiblyOutlives</code> warning did <em>not</em> fire for an outer-scope computed reading an inner-scope value in our bench; don't rely on the lifetime analysis catching every inversion.</li>
+</ul></div>
+<div class="rule-card"><strong>Framework rule 1.</strong> One root scope per app, created at bootstrap. One <code>innerScope</code> per screen or feature. Components receive their scope as a parameter and never create root scopes. Because destruction is irrecoverable, <em>pooling or reusing destroyed screens is off the table</em>; model show/hide separately from create/destroy (see §11).</div>
+
+<h2 id="state">3 · State primitives</h2>
+<p><span class="badge b-ver">verified 3–0</span>0.3 removed <code>StateObject:get()</code> entirely. Reads happen two ways, and the distinction is the heart of the reactive graph:</p>
+<ul>
+  <li><strong><code>use(state)</code></strong>: the function passed into <code>Computed</code> and For-object callbacks. Reads the value <em>and registers a dependency</em>, so the computed re-runs when it changes.</li>
+  <li><strong><code>peek(state)</code></strong>: reads without creating a dependency. For event handlers, one-shot logic, and anywhere outside reactive callbacks.</li>
+</ul>
+<pre><code>local coins = scope:Value(120)
+local price = scope:Value(50)
+
+local canAfford = scope:Computed(function(use)
+    return use(coins) >= use(price) <span class="cm">-- reactive reads</span>
+end)
+
+local function onBuyClicked()
+    if peek(canAfford) then <span class="cm">-- non-reactive read</span>
+        Network.Buy:Fire(peek(price))
+    end
+end</code></pre>
+<p><span class="badge b-ver">verified 3–0</span><strong>Observers</strong> are for side effects (sounds, analytics, tweening non-UI systems). In 0.3 they're scope-owned (<code>scope:Observer(state)</code>), and their <code>:onChange()</code> connections auto-disconnect when the scope cleans up. Manual disconnection is only for early teardown. This means side-effect wiring inherits component and screen lifetimes for free, no leak bookkeeping.</p>
+<h3>Derived-state cookbook</h3>
+<p>Three small patterns that cover most day-to-day derivations:</p>
+<pre><code><span class="cm">-- 1. Boolean gates: derive capability, bind it everywhere</span>
+local canAfford = scope:Computed(function(use)
+    return use(coins) >= use(price)
+end)
+
+<span class="cm">-- 2. Formatted labels: keep formatting in one computed, not in bindings</span>
+local coinLabel = scope:Computed(function(use)
+    return `⛁ {use(coins)}`
+end)
+
+<span class="cm">-- 3. Cross-store joins: computeds can read any number of stores</span>
+local canEquip = scope:Computed(function(use)
+    return use(player.Level) >= item.minLevel
+        and table.find(use(player.OwnedIds), item.id) ~= nil
+end)</code></pre>
+<div class="lab"><div class="lab-title">Lab results: the graph is lazy and dependencies are dynamic</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span><strong>Computeds are lazily evaluated.</strong> A freshly constructed computed had run <em>zero</em> times; setting its dependency still left it at zero; the first <code>peek()</code> ran it once. Invalidation marks the graph dirty; computation happens on read (or when a binding reads it, see §7). Consequence: an unread computed costs nothing, and construction order doesn't trigger evaluation cascades.</li>
+  <li><strong>Dependencies are per-evaluation.</strong> A state read with <code>peek()</code> inside a computed never invalidated it (changing that state caused zero recomputes). Dependency registration happens only through <code>use()</code>, only on the branches actually executed; this is what makes the gate pattern in §11 free.</li>
+  <li>Observer auto-disconnect confirmed: after <code>doCleanup</code>, further <code>:set()</code> calls fired nothing. Bonus: <code>Observer:onBind(fn)</code> is supported and fires once immediately plus on every change: the right tool for "sync this side effect now and henceforth".</li>
+</ul></div>
+<p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/tutorials/fundamentals/computeds/">computeds</a>, <a href="https://elttob.uk/Fusion/0.3/tutorials/fundamentals/observers/">observers</a>, <a href="https://github.com/dphfox/Fusion/discussions/217">discussion #217</a></p>
+
+<h2 id="components">4 · Component conventions</h2>
+<p><span class="badge b-ver">verified 3–0</span>Fusion has no class or component-object system. A component is a plain function with the signature <code>(scope, props)</code> returning UI content. Scope goes <em>first</em> deliberately, so user components compose exactly like built-ins:</p>
+<pre><code>local function Button(scope: Fusion.Scope&lt;typeof(Fusion)&gt;, props: {
+    Text: Fusion.UsedAs&lt;string&gt;?,
+    Disabled: Fusion.UsedAs&lt;boolean&gt;?,
+    OnClick: (() -> ())?,
+})
+    return scope:New "TextButton" {
+        Text = props.Text,
+        AutoButtonColor = scope:Computed(function(use)
+            return not use(props.Disabled)
+        end),
+        [OnEvent "Activated"] = function()
+            if props.OnClick and not peek(props.Disabled) then
+                props.OnClick()
+            end
+        end,
+    }
+end
+
+<span class="cm">-- usage, after adding Button to the scope's method tables:</span>
+local ui = scope:Button {
+    Text = "Buy",
+    Disabled = canAfford,
+    OnClick = onBuyClicked,
+}</code></pre>
+<p><span class="badge b-ver">verified 3–0</span>Props conventions that real component libraries converge on (and the docs endorse):</p>
+<ul>
+  <li><strong>Reactive props accept both shapes</strong>: type them <code>UsedAs&lt;T&gt;</code> so callers can pass a raw value or a state object interchangeably.</li>
+  <li><strong>Static config stays plain</strong>: e.g. <code>TweenSettings: TweenInfo?</code>. Don't make everything reactive.</li>
+  <li><strong>Events are callback props</strong>: expose <code>OnClick</code>/<code>Activated</code> functions in the public API, not raw <code>[OnEvent]</code> keys. Special keys are an implementation detail of the component.</li>
+  <li><strong>Children via a typed prop</strong>: e.g. <code>Content: UsedAs&lt;{Instance}&gt;?</code>, forwarded to <code>[Children]</code> internally.</li>
+  <li><strong>Passthrough</strong>: an <code>[any]: any</code> index signature forwarding unrecognized properties to the underlying instance, so consumers can set <code>LayoutOrder</code>, <code>Size</code>, etc. without the component enumerating them.</li>
+</ul>
+<p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/tutorials/best-practices/components/">components best practices</a>, <a href="https://github.com/virtualbutfake/fusion-components">fusion-components</a>, <a href="https://github.com/mvyasu/PluginEssentials">PluginEssentials</a> (both 0.2; patterns translated)</p>
+<div class="lab"><div class="lab-title">Lab results: components and bindings</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span>The exact <code>Button</code> above (adapted) ran as written: <code>scoped(Fusion, { Button = Button })</code> made <code>scope:Button{ Text = state }</code> work, and the instance tracked the state.</li>
+  <li><strong>Bound properties apply synchronously.</strong> <code>labelText:set("world")</code> changed <code>btn.Text</code> on the very same line: no deferral, no frame delay. A bound property read is what forces a lazy computed to evaluate, which is why binding a computed makes it effectively eager (measured in §11).</li>
+  <li><code>[Children]</code>, <code>[OnEvent]</code> behaved as documented, and <code>doCleanup</code> on the owning scope destroyed the created instances.</li>
+</ul></div>
+
+<h2 id="org">5 · Project organization</h2>
+<p><span class="badge b-ver">verified 3–0</span>Mature Fusion codebases use <strong>one module per component</strong> with layered category folders. fusion-components splits <code>src/components</code> into <code>base/</code> primitives (button, frame, text, textBox, imageLabel, sinkFrame), <code>common/</code> composed pieces, and <code>utility/</code>, with <code>src/theme</code> separate and Flipbook stories colocated in-repo but excluded from the published package. PluginEssentials separates host-instance wrappers from visual components, with shared helpers isolated in <code>Util/</code>.</p>
+<pre><code>ReplicatedStorage/Client/UI/
+├── components/
+│   ├── base/        <span class="cm">-- primitives: Button, Frame, Text, Image, Input</span>
+│   ├── common/      <span class="cm">-- composed: ItemCard, CurrencyLabel, TabBar</span>
+│   └── utility/     <span class="cm">-- non-visual helpers: Padding, Corner, Stroke</span>
+├── screens/         <span class="cm">-- one module per screen, (scope, props) like any component</span>
+├── stores/          <span class="cm">-- reactive state modules, constructed with the app scope</span>
+├── theme/           <span class="cm">-- palette, type scale, spacing tokens</span>
+├── stories/         <span class="cm">-- dev-only component stories, excluded from ship</span>
+└── App.luau         <span class="cm">-- bootstrap: root scope, stores, router, ScreenGui</span></code></pre>
+<div class="rule-card"><strong>Framework rule 2.</strong> Primitives depend on theme only. Composed components depend on primitives. Screens depend on components and stores. Stores depend on nothing UI-side. Dependencies point one way, and the scope flows down through every layer as the first argument.</div>
+
+<h2 id="stores">6 · Stores and server data</h2>
+<p><span class="badge b-ver">verified 3–0</span>The official docs explicitly warn against module-level global state: "you can't destroy globals until the very end of your program," plus hidden dependencies and untestability. The sanctioned alternative for widely-shared values is the <strong>Contextual</strong> API: <code>Fusion.Contextual(default)</code>, temporarily overridden with <code>:is(value):during(callback)</code> and read with <code>:now()</code>. The docs frame globals as risky-but-permitted, not forbidden.</p>
+<p class="src">Source: <a href="https://elttob.uk/Fusion/0.3/tutorials/best-practices/sharing-values/">sharing values</a></p>
+<p><span class="badge b-syn">synthesis</span>The pattern that follows from the verified primitives: store <em>factories</em> instead of store globals:</p>
+<pre><code><span class="cm">-- stores/PlayerStore.luau</span>
+local function PlayerStore(scope)
+    local coins = scope:Value(0)
+    local level = scope:Value(1)
+    return {
+        Coins = coins,
+        Level = level,
+        <span class="cm">-- single-writer discipline: mutations only through methods</span>
+        ApplySnapshot = function(data)
+            coins:set(data.Coins)
+            level:set(data.Level)
+        end,
+    }
+end
+return PlayerStore
+
+<span class="cm">-- App.luau</span>
+local scope = scoped(Fusion, { Button = Button, ... })
+local stores = {
+    Player = PlayerStore(scope),
+}
+<span class="cm">-- hand stores to screens via props (explicit) or Contextual (ambient)</span></code></pre>
+<p><span class="badge b-syn">synthesis</span>Bridging server data: keep the network layer entirely outside components. One thin module owns the remotes and writes into stores; components never see a RemoteEvent.</p>
+<pre><code><span class="cm">-- stores/replication.luau: the only file that touches remotes</span>
+Network.PlayerData.OnClientEvent:Connect(function(snapshot)
+    table.freeze(snapshot)          <span class="cm">-- see §10: frozen tables skip updates</span>
+    stores.Player.ApplySnapshot(snapshot)
+end)</code></pre>
+<p>Data flows one direction: <em>remote → store Value → Computed → bound property</em>. UI actions go the other way as plain function calls that fire remotes. Nothing in the reactive graph ever writes to the server directly.</p>
+<div class="lab"><div class="lab-title">Lab results: Contextual</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span><code>Contextual</code> behaves exactly as documented, including nesting: <code>:now()</code> returned the default outside, the override inside <code>:is():during()</code>, and correct inner/outer values in nested overrides.</li>
+  <li><strong>The lazy-evaluation trap.</strong> A computed <em>constructed</em> during an override but first <em>read</em> after it ended returned the <strong>default</strong>, not the override, because computeds are lazy (§3), <code>ctx:now()</code> runs at evaluation time, and by then the <code>:during()</code> block is long gone. If you use Contextual for dependency injection (themes, stores), read it in construction-time code (the component function body) and capture the result, rather than calling <code>:now()</code> inside computed callbacks.</li>
+</ul></div>
+
+<h2 id="instances">7 · Instances and bindings</h2>
+<p><span class="badge b-doc">official docs</span>Instances are built with <code>scope:New "ClassName" { ... }</code>. String keys assign properties; if the assigned value is a state object, the property re-assigns on every change; that's the entire binding system, no VDOM or diffing. Special keys available in 0.3: <code>[Children]</code>, <code>[Child]</code>, <code>[OnEvent]</code>, <code>[OnChange]</code>, <code>[Out]</code>, <code>[Attribute]</code>, <code>[AttributeChange]</code>, <code>[AttributeOut]</code>. Gone from 0.2: <code>[Ref]</code> (constructors return the instance; just assign it to a local) and <code>[Cleanup]</code> (scopes own lifetimes now).</p>
+<pre><code>local hpBar = scope:New "Frame" {
+    Size = scope:Computed(function(use)
+        return UDim2.fromScale(use(healthPercent), 1)
+    end),
+    [OnChange "AbsoluteSize"] = function(newSize)
+        <span class="cm">-- fires with the new value when the property changes</span>
+    end,
+    [Children] = {
+        scope:New "UICorner" { CornerRadius = UDim.new(0, 6) },
+    },
+}</code></pre>
+<p><span class="badge b-doc">official docs</span><code>[Out "Property"]</code> writes property changes back into a <code>Value</code>: instance-to-state, one direction. Fusion has no true two-way binding primitive; binding a property <em>and</em> outputting the same property means two systems fighting over one value. The clean pattern for inputs: bind nothing, read via <code>[Out]</code>, or set state only in event handlers.</p>
+<p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/new/">New</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/out/">Out</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/onevent/">OnEvent</a></p>
+<div class="lab"><div class="lab-title">Lab results: Hydrate, Out, and attributes</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span><strong><code>Hydrate</code> does not take ownership of the instance.</strong> It returned the same instance, applied and reactively updated bound properties; after <code>doCleanup</code>, the bindings died but the instance itself <em>survived, fully usable</em>. That makes Hydrate the right tool for wrapping pre-built instance trees (Studio-designed or generated UI) in reactive state without Fusion claiming their lifetimes.</li>
+  <li><code>[Out "Text"]</code> captured the initial property value immediately and tracked later property writes. Binding <em>and</em> outputting the same property to the same <code>Value</code> was stable in both directions in our bench: state writes reached the property and property writes reached the state, with no feedback loop. But treat true two-way binding as a last resort; one-directional flow stays debuggable.</li>
+  <li><code>[Attribute]</code> set and reactively updated instance attributes; <code>[AttributeOut]</code> reflected the current value. The attribute key family works as the API reference describes.</li>
+</ul></div>
+
+<h2 id="lists">8 · List rendering</h2>
+<p><span class="badge b-doc">official docs</span>Never rebuild children arrays inside a <code>Computed</code>; the For-objects exist precisely so list updates are incremental. All three take <code>(scope, inputTable, processor)</code> where <code>inputTable</code> can be a state object:</p>
+<div class="tablewrap"><table>
+  <tr><th>Constructor</th><th>Processor</th><th>Use when</th></tr>
+  <tr><td><code>ForValues</code></td><td><code>(use, scope, value) → newValue</code></td><td>Transforming values, keys preserved, e.g. item data → item card instance.</td></tr>
+  <tr><td><code>ForPairs</code></td><td><code>(use, scope, key, value) → (newKey, newValue)</code></td><td>Both sides matter, e.g. inventory keyed by slot.</td></tr>
+  <tr><td><code>ForKeys</code></td><td><code>(use, scope, key) → newKey</code></td><td>Only keys transform; docs note it reprocesses <em>only affected keys</em>.</td></tr>
+</table></div>
+<p><span class="badge b-doc">official docs</span>The critical lifecycle detail: each processor invocation receives <strong>its own scope</strong>, cleaned up automatically when that item is reprocessed or removed. Per-item connections, springs, and sub-instances die with the item: no manual bookkeeping.</p>
+<pre><code>local items = scope:Value({ ... })  <span class="cm">-- array of item data</span>
+
+local cards = scope:ForValues(items, function(use, itemScope, item)
+    return itemScope:ItemCard { Item = item }  <span class="cm">-- dies when item leaves</span>
+end)
+
+scope:New "ScrollingFrame" { [Children] = cards }</code></pre>
+<p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forvalues/">ForValues</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forpairs/">ForPairs</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forkeys/">ForKeys</a></p>
+<div class="lab"><div class="lab-title">Lab results: incremental behavior confirmed, and the real scaling shape</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span>Removing one value from a 5-item <code>ForValues</code> ran the processor <strong>zero</strong> additional times and cleaned exactly the removed item's scope; adding one ran it exactly once. <code>ForKeys</code> over 100 keys reprocessed exactly 1 key when 1 was added. Per-item caching is real (frozen items are cached by identity; another reason to freeze).</li>
+  <li><strong>The per-update cost is the table diff, not the processing.</strong> At 1,000 items, a single-item add cost ~4.7&nbsp;ms whether the processor returned plain data or built Frames: Fusion scans the new table against the old one, so updates scale O(n) with collection size even when one item changed. Cheap at game-UI scale, but don't put a 10,000-row table behind one For-object and update it per-frame.</li>
+  <li><code>ForPairs</code> confirmed equally incremental: changing one value in a 3-pair dictionary reprocessed exactly that pair, and key/value inversion round-tripped correctly.</li>
+  <li><strong>Nested For-objects work, but budget for branch rebuilds.</strong> An outer <code>ForValues</code> of lists with an inner <code>ForValues</code> per list produced correct output and cascaded cleanup on removal. But removing one outer list also recycled the <em>surviving</em> list's per-item scopes in our bench (5 cleanups where the minimum would be 3). Don't assume nested structures rebuild only the removed branch; keep per-item work in nested Fors cheap or flatten the data.</li>
+</ul>
+<div class="tablewrap"><table>
+  <tr><th>Scale</th><th>Initial build</th><th>Add 1 item</th><th>Remove 1 (middle)</th><th>Full cleanup</th></tr>
+  <tr><td>100 items → data</td><td>0.2 ms</td><td>0.07 ms</td><td>0.11 ms</td><td>0.1 ms</td></tr>
+  <tr><td>1,000 items → data</td><td>2.9 ms</td><td>4.7 ms</td><td>4.0 ms</td><td>0.9 ms</td></tr>
+  <tr><td>100 items → Frames</td><td>0.7 ms</td><td>0.09 ms</td><td>0.11 ms</td><td>0.2 ms</td></tr>
+  <tr><td>500 items → Frames</td><td>3.9 ms</td><td>1.3 ms</td><td>1.0 ms</td><td>1.5 ms</td></tr>
+  <tr><td>1,000 items → Frames</td><td>7.5 ms</td><td>4.7 ms</td><td>4.0 ms</td><td>4.4 ms</td></tr>
+</table></div>
+<p style="font-size:0.85rem;color:var(--muted);margin-bottom:0;">Studio edit-mode, single-threaded, frozen item tables. Directional figures, not absolutes.</p>
+</div>
+
+<h2 id="animation">9 · Animation</h2>
+<p><span class="badge b-doc">official docs</span>Both animation objects are state objects that <em>follow</em> a goal: you bind properties to them like any other state:</p>
+<ul>
+  <li><code>scope:Tween(goal, tweenInfo)</code>: follows the goal along an easing curve. <code>tweenInfo</code> itself accepts a state object, so easing can change dynamically.</li>
+  <li><code>scope:Spring(goal, speed, damping)</code>: physics-based following. <code>speed</code> and <code>damping</code> both accept state objects. Damping semantics: 0 = no resistance, 1 = critical (no overshoot), higher = overdamped. Doubling speed exactly halves motion time.</li>
+</ul>
+<pre><code>local menuOpen = scope:Value(false)
+
+local slide = scope:Spring(scope:Computed(function(use)
+    return if use(menuOpen) then UDim2.fromScale(0, 0) else UDim2.fromScale(-1, 0)
+end), 25, 1)
+
+scope:New "Frame" { Position = slide }  <span class="cm">-- flip menuOpen; physics does the rest</span></code></pre>
+<p>The idiom: state describes <em>where things should be</em>; springs and tweens are interposed between logical state and bound properties. Animation becomes declarative: no imperative TweenService calls in components.</p>
+<div class="lab"><div class="lab-title">Lab results: animation</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span>The menu-slide pattern above ran verbatim: spring (speed 25, damping 1) reached 62% of its goal in 100&nbsp;ms and settled by 500&nbsp;ms; the bound property landed exactly on 1.0 / 0.0 after each flip.</li>
+  <li>Reactive parameters work mid-flight: boosting <code>speed</code> from 5 to 50 while the spring was at 14% snapped it to convergence. A reactive <code>TweenInfo</code> swap took effect on the next goal change. A linear 0.4&nbsp;s tween measured 5.02/10 at its midpoint.</li>
+  <li><strong>Springs keep the graph quiet.</strong> While the spring animated the bound property every frame, the goal computed evaluated only 3 times total; the per-frame motion lives inside the animation object, outside the dependency graph. Interpose springs/tweens freely; they don't multiply reactive work.</li>
+  <li><strong>Interrupted tweens re-tween from their current value</strong>, a question the docs leave open, now measured: a linear 0→10 tween interrupted at 5.05 by a new goal of 0 descended smoothly (3.80 a tenth of a second later) and settled at 0. No snapping, no restart-from-goal. Retargeting mid-flight is safe.</li>
+  <li>Typed springs confirmed: <code>UDim2</code> and <code>Color3</code> goals both animated and converged; the "animatable types" phrase covers Roblox's composite value types in practice.</li>
+</ul></div>
+<p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/tween/">Tween</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/spring/">Spring</a></p>
+
+<h2 id="perf">10 · Performance</h2>
+<p><span class="badge b-doc">official docs</span>Fusion skips updates that aren't "meaningfully different" via a <strong>similarity test</strong>. The rules, verbatim from the optimisation guide:</p>
+<ul>
+  <li>Different types never pass similarity.</li>
+  <li>Frozen tables and tables with metatables pass when <code>==</code> to each other.</li>
+  <li><strong>Unfrozen, non-metatable tables never pass</strong>: they always propagate updates, even when contents are identical.</li>
+  <li>Everything else passes when <code>==</code> (NaN and userdata per <code>==</code> semantics).</li>
+</ul>
+<div class="rule-card"><strong>Framework rule 3.</strong> "Freeze every table you create, unless you need to change what's inside later", the docs' words. Freezing is near-zero cost and lets Fusion skip entire downstream branches. Make <code>table.freeze</code> the default in stores, computed returns, and network payloads.</div>
+<p>Beyond similarity: keep computeds granular (one value per concern, so a coin change doesn't recompute a whole HUD table), and use For-objects for collections (§8) so per-item work is incremental rather than whole-list.</p>
+<div class="lab"><div class="lab-title">Lab results: the similarity engine, measured</div>
+<div class="tablewrap"><table>
+  <tr><th>Operation</th><th>Downstream recompute?</th></tr>
+  <tr><td><code>set()</code> the <strong>same unfrozen table reference</strong> again</td><td><strong>Yes</strong>: unfrozen tables never pass similarity, even by identity</td></tr>
+  <tr><td><code>set()</code> the same <strong>frozen</strong> reference again</td><td>No, skipped</td></tr>
+  <tr><td><code>set()</code> a <em>new</em> frozen table with equal contents</td><td>Yes, similarity is <code>==</code>, not deep-equal</td></tr>
+  <tr><td><code>set(5)</code> when the value is already <code>5</code></td><td>No, skipped</td></tr>
+</table></div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span><strong>Computeds are propagation firewalls.</strong> With <code>src → mid → leaf</code> where <code>mid</code> returns a boolean, changing <code>src</code> in a way that left <code>mid</code>'s result identical caused <em>zero</em> leaf recomputes; flipping <code>mid</code>'s result recomputed the leaf once. The "granular computeds" advice is not style: each computed boundary is a measured cutoff point.</li>
+  <li>Practical corollary: a store that mutates and re-sets the same unfrozen table (<code>table.insert(t, x); state:set(t)</code>) triggers <em>every</em> downstream update <em>every</em> time. Build a new frozen table per change instead.</li>
+</ul></div>
+<div class="lab"><div class="lab-title">Lab results: stress and error resilience</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span><strong>Graph scale is a non-issue at game-UI size.</strong> A 100-deep computed chain cold-evaluated in 0.30&nbsp;ms and propagated an update in 0.12&nbsp;ms. Setting 1,000 individually-bound Values took 3.5&nbsp;ms total. One <code>:set()</code> fanned out to 1,000 observers in 2.8&nbsp;ms. Architect for clarity; the graph won't be your bottleneck.</li>
+  <li><strong>Errors degrade gracefully.</strong> A computed whose callback threw did not break reads: <code>peek()</code> returned the <em>last good value</em> (with one Fusion-logged error), and the computed recovered on the next valid input. A <code>ForValues</code> processor throwing for one item still produced all other items. An observer handler throwing didn't stop other observers from firing. Fusion's blast radius for a bad callback is that callback. But note the flip side: stale values and silent no-ops (§2) mean errors <em>hide</em> well. Watch the output console during development; the runtime is designed to keep going, not to stop you.</li>
+</ul></div>
+<p class="src">Source: <a href="https://elttob.uk/Fusion/0.3/tutorials/best-practices/optimisation/">optimisation</a></p>
+
+<h2 id="routing">11 · Screens and routing</h2>
+<p><span class="badge b-syn">synthesis</span>No official routing guidance exists; the research produced no verified community pattern either. But the verified lifecycle constraints (§2: destroyed = irrecoverable; <code>innerScope</code> for child lifetimes) leave exactly two coherent architectures:</p>
+<div class="tablewrap"><table>
+  <tr><th>Architecture</th><th>Mechanism</th><th>Trade-off</th></tr>
+  <tr><td><strong>Persistent screens</strong></td><td>Build every screen once at boot; bind each screen's <code>Visible</code> to a computed over a <code>CurrentScreen</code> value.</td><td>Instant switching, screens keep internal state; full memory footprint always resident; bound properties on hidden screens still update unless gated.</td></tr>
+  <tr><td><strong>Scoped create/destroy</strong></td><td>One <code>innerScope</code> per screen; navigation cleans the old scope and constructs the new screen fresh.</td><td>Clean memory, guaranteed teardown of connections/springs; loses transient screen state; construction cost on every open; a destroyed screen can never be revived; always construct fresh.</td></tr>
+</table></div>
+<pre><code>local function Router(appScope, screens)
+    local current = appScope:Value(nil)
+    local screenScope = nil
+    local function navigate(name, props)
+        if screenScope then doCleanup(screenScope) end
+        screenScope = appScope:innerScope()
+        local ui = screens[name](screenScope, props or {})
+        ui.Parent = playerGui.Main
+        current:set(name)
+    end
+    return { Current = current, Navigate = navigate }
+end</code></pre>
+<p><span class="badge b-syn">synthesis</span>Recommended hybrid for a typical game with a HUD plus ~10 menu screens: the HUD and any always-relevant chrome are persistent; menu screens (shops, inventories, settings) use scoped create/destroy: they're heavy, rarely all open, and their state should come from stores anyway, not from surviving instances. If a screen must keep transient state across closes, that state belongs in a store, which makes the destroy/recreate cycle lossless.</p>
+<p>One extra gate for persistent screens: wrap expensive bound computeds so hidden screens go quiet, e.g. computeds that early-return when <code>use(isOpen)</code> is false, since property bindings keep evaluating on invisible instances.</p>
+<div class="lab"><div class="lab-title">Lab results: the router numbers</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span><strong>Hidden screens are not free.</strong> A frame with <code>Visible = false</code> and one bound computed evaluated on <em>100 of 100</em> store updates: bindings ignore visibility entirely. The theoretical concern is a measured fact.</li>
+  <li><strong>The gate pattern reduces that to zero.</strong> A computed that early-returns while <code>use(open)</code> is false ran its expensive branch <em>0 times across 100 store updates</em> while closed (and 11 times across 10 updates once opened). The mechanism: dependencies register per-evaluation, so while the gate is closed the store isn't a dependency at all; updates don't even invalidate the computed.
+<pre style="margin-bottom:0"><code>Size = scope:Computed(function(use)
+    if not use(isOpen) then
+        return UDim2.new() <span class="cm">-- store never use()d: no dependency while closed</span>
+    end
+    return expensiveLayout(use(store))
+end)</code></pre></li>
+  <li><strong>Scoped create/destroy is cheap and airtight.</strong> A screen with 20 bound children plus an observer and a spring tore down completely on <code>doCleanup(screenScope)</code>: instances destroyed, observer silent afterward. 100 create/destroy cycles of an 11-instance screen took 14&nbsp;ms total (~0.14&nbsp;ms per cycle) and left <em>zero</em> instances behind. Combined with §8's 7.5&nbsp;ms build for 1,000 frames, construction cost is no argument against the create/destroy architecture at game-UI scale.</li>
+  <li>The store-factory + mock-remote bridge from §6 ran as written: a fired snapshot updated the bound label synchronously.</li>
+</ul></div>
+
+<h2 id="migration">12 · 0.2 → 0.3 translation table</h2>
+<p>The complete translation map for adopting 0.2-era community code (this is the same table as §1, expanded with semantics):</p>
+<div class="tablewrap"><table>
+  <tr><th>0.2 idiom</th><th>0.3 replacement</th><th>Semantic change</th></tr>
+  <tr><td><code>state:get()</code></td><td><code>use(state)</code> / <code>peek(state)</code></td><td>Dependency registration is now explicit in the read; silent dependency capture is gone.</td></tr>
+  <tr><td>Bare constructors</td><td><code>scope:Constructor(...)</code></td><td>Lifetime is owned at creation, not discovered at cleanup.</td></tr>
+  <tr><td><code>Observer(state)</code> forever-connections</td><td><code>scope:Observer(state)</code></td><td>Handlers auto-disconnect on scope cleanup.</td></tr>
+  <tr><td>Destructors, <code>[Cleanup]</code></td><td>Scopes + <code>doCleanup</code></td><td>Reverse-order, type-dispatched, recursive; destroyed values irrecoverable.</td></tr>
+  <tr><td><code>CanBeState&lt;T&gt;</code></td><td><code>UsedAs&lt;T&gt;</code></td><td>Rename only.</td></tr>
+  <tr><td><code>ComputedPairs</code></td><td><code>ForPairs</code>/<code>ForValues</code>/<code>ForKeys</code></td><td>Per-item scopes with automatic per-item cleanup.</td></tr>
+  <tr><td><code>[Ref]</code></td><td>Constructor return value</td><td><code>New</code> returns the instance directly.</td></tr>
+  <tr><td>Component = <code>(props)</code></td><td>Component = <code>(scope, props)</code></td><td>Enables <code>scope:Component{}</code> method syntax.</td></tr>
+</table></div>
+
+<h2 id="alternatives">13 · Context: React-lua and Vide</h2>
+<p><span class="badge b-syn">synthesis</span>No claims in this area survived to verification, so treat this as background judgment rather than researched fact. The architecture-relevant distinction: React-lua re-renders component functions and diffs a virtual tree, so its frameworks organize around render purity and memoization; Fusion (like Vide, which shares the fine-grained reactive model) runs component functions <em>once</em> and lets the dependency graph update individual properties directly. Consequences for everything above: components are construction-time code (no re-render loop to design for), state granularity is the performance lever (not memo boundaries), and lifetimes are explicit via scopes (not implied by unmounting). If a pattern you're importing comes from React-lua material, check whether it exists to solve re-rendering; if so, it likely has no Fusion equivalent and can be dropped.</p>
+
+<h2 id="uilabs">14 · Component workbench: UI-Labs</h2>
+<p><span class="badge b-doc">official docs</span><a href="https://github.com/PepeElToro41/ui-labs">UI-Labs</a> is the storybook plugin for Roblox: the missing piece of the code-first workflow, letting you build and iterate components in isolation without running the game. Three pillars, per its docs: a <strong>hot reloader</strong> ("see your changes in real-time"), <strong>controls</strong> (adjust component props from a panel instead of editing code), and a <strong>sandboxed environment</strong> (stories run "virtually in an isolated environment, no conflicts or side effects"). It supports Fusion, React/Roact, Vide, and Iris story formats, plus generic function stories.</p>
+<h3>Installation and layout</h3>
+<p>Two parts: the Studio plugin (<a href="https://create.roblox.com/store/asset/14293316215/UI-Labs">Creator Store asset 14293316215</a> or GitHub releases), and an optional utility package (Wally <code>pepeeltoro41/ui-labs</code>, npm <code>@rbxts/ui-labs</code>) that adds typed helpers and advanced controls; the docs note the plugin works "with no extra code" but the package "unlocks its full potential". The plugin presents a dock widget: a story explorer listing every <code>.story</code> module it finds in the place, a live viewport canvas where the selected story mounts (multi-mounting supported), and a controls panel for the story's declared props. Stories are ModuleScripts named with the <code>.story</code> suffix (e.g. <code>Button.story</code>), which is exactly what the <code>stories/</code> folder in §5's layout holds, or colocate them next to components and exclude them from the shipped build.</p>
+<h3>The Fusion story format</h3>
+<p><span class="badge b-doc">official docs</span>A Fusion story module returns a table: <code>fusion</code> (your Fusion instance), <code>story</code> (a function called once to mount), and optional <code>controls</code>. The story function receives <code>props</code> with three fields: <code>props.target</code> (the Frame to parent into), <code>props.controls</code> (each declared control arrives as a ready-made <code>Fusion.Value</code>, reactive out of the box), and <code>props.scope</code> (Fusion 0.3+). The scope integration is the important part: <em>"this scope will be destroyed with <code>Fusion.doCleanup</code> when the story is unmounted"</em>. UI-Labs speaks native 0.3 lifecycle, so a story needs no manual cleanup. (On 0.2, returning a cleanup function is required.) Controls are declared as key → default value pairs; primitive types (string/number/boolean) are inferred, and the utility package adds advanced controls like dropdowns, sliders, and color pickers.</p>
+<pre><code><span class="cm">-- components/base/Button.story (ModuleScript)</span>
+local Fusion = require(game.ReplicatedStorage.Packages.Fusion)
+local Button = require(script.Parent.Button)
+
+return {
+    fusion = Fusion,
+    controls = {
+        Text = "Buy",
+        Disabled = false,
+    },
+    story = function(props)
+        local scope = props.scope
+        local btn = scope:Button {
+            Text = props.controls.Text,         <span class="cm">-- already a Fusion.Value</span>
+            Disabled = props.controls.Disabled, <span class="cm">-- flip it in the panel, UI reacts</span>
+        }
+        btn.Parent = props.target
+    end,
+}</code></pre>
+<p>Note what this rewards: because §4's props convention types every reactive prop as <code>UsedAs&lt;T&gt;</code>, the control <code>Value</code>s pass straight into your components with zero adaptation. The generic fallback format (for non-Fusion helpers or quick fixtures) is even simpler: the module returns <code>function(target: Frame) → cleanup?</code>, with one documented sharp edge: if the mount function errors before returning its cleanup, leaked instances can require a Studio restart.</p>
+<div class="lab"><div class="lab-title">Lab results: the story contract, simulated</div>
+<ul>
+  <li><span class="badge b-lab">lab tested</span>We executed the exact story above under a simulated UI-Labs runner (scope created via <code>scoped(Fusion)</code>, controls wrapped as <code>scope:Value</code>s, <code>story(props)</code> called once, <code>doCleanup</code> on unmount): the component mounted into the target, panel-style control writes drove the UI reactively (<code>Text</code> and a computed over <code>Disabled</code> both updated), and <code>doCleanup</code> alone fully unmounted everything: no cleanup function needed, matching the documented 0.3 behavior.</li>
+  <li>Framework takeaway: treat every component as story-first. If a component can't be mounted with nothing but a scope, a target, and a props table of state objects, it has hidden dependencies; the story format is a free architecture test.</li>
+</ul></div>
+<p class="src">Sources: <a href="https://ui-labs.luau.page/">ui-labs.luau.page</a> (get started, installation, Fusion stories, function stories, controls), <a href="https://github.com/PepeElToro41/ui-labs">PepeElToro41/ui-labs</a> (v1.6.0, Jan 2026)</p>
+
+<h2 id="template">15 · The template place</h2>
+<p><span class="badge b-lab">lab tested</span>Everything in this guide, distilled into a runnable starter place: Fusion v0.3-beta (75 modules, built from the official source tree) plus a complete miniature framework following every convention above: theme tokens, base and composed components, a store factory with single-writer methods and frozen snapshots, the hybrid router, two screens (one with a For-object shop list and a working buy flow), a UI-Labs story, and a client bootstrap with a mock replication bridge. It was verified live before packaging: the shop mounts six reactive cards, buying flips a card to "Owned" and deducts coins, unaffordable items disable themselves, navigation destroys and rebuilds screens with zero leaked instances, and the HUD coin counter ticks from the store bridge.</p>
+<p><a download="fusion-template.rbxlx" href="fusion-template.rbxlx"><strong>⬇ Download fusion-template.rbxlx</strong></a> (~180&nbsp;KB, XML place format; open directly in Roblox Studio via double-click or File → Open, then press Play). No dependencies, no external assets, MIT-licensed Fusion inside.</p>
+<pre><code>ReplicatedStorage/
+├── Fusion                      <span class="cm">-- v0.3-beta, from the official source tree</span>
+└── UIFramework/
+    ├── theme                   <span class="cm">-- frozen palette/type/spacing tokens</span>
+    ├── Router                  <span class="cm">-- innerScope create/destroy + Toggle</span>
+    ├── configs/items           <span class="cm">-- frozen item definitions</span>
+    ├── components/
+    │   ├── base/Button         <span class="cm">-- hover spring, disabled state, callback props</span>
+    │   ├── base/Button.story   <span class="cm">-- UI-Labs story with controls</span>
+    │   ├── base/Panel          <span class="cm">-- container with Content children prop</span>
+    │   └── common/ItemCard     <span class="cm">-- composed: Panel-less card + Button</span>
+    ├── stores/PlayerStore      <span class="cm">-- factory: Coins/Level/OwnedIds + methods</span>
+    └── screens/
+        ├── HubScreen
+        └── ShopScreen          <span class="cm">-- ForValues → ItemCard, live buy flow</span>
+StarterPlayer/StarterPlayerScripts/
+└── App                        <span class="cm">-- root scope, stores, router, HUD, mock bridge</span></code></pre>
+
+<h3>theme.luau: tokens, frozen</h3>
+<pre><code>local theme = {
+    palette = table.freeze({
+        bg = Color3.fromRGB(24, 26, 32),
+        panel = Color3.fromRGB(34, 38, 47),
+        panelLight = Color3.fromRGB(45, 50, 61),
+        accent = Color3.fromRGB(88, 182, 226),
+        text = Color3.fromRGB(235, 240, 245),
+        textDim = Color3.fromRGB(150, 160, 172),
+    }),
+    font = Font.fromEnum(Enum.Font.GothamMedium),
+    fontBold = Font.fromEnum(Enum.Font.GothamBold),
+    corner = UDim.new(0, 8),
+    pad = 10,
+    textSize = 16,
+}
+
+return table.freeze(theme)</code></pre>
+
+<h3>Button: the §4 sketch, production-shaped</h3>
+<p>Hover state via a color spring (§9), disabled logic as a computed gate, events as callback props:</p>
+<pre><code>local function Button(scope: Fusion.Scope&lt;any&gt;, props: Props)
+    local hovering = scope:Value(false)
+
+    local targetColor = scope:Computed(function(use)
+        if use(props.Disabled) then
+            return theme.palette.panel
+        end
+        return if use(hovering) then theme.palette.accent else theme.palette.panelLight
+    end)
+
+    return scope:New "TextButton" {
+        Size = props.Size or UDim2.fromOffset(140, 40),
+        BackgroundColor3 = scope:Spring(targetColor, 30, 1),
+        Text = props.Text or "Button",
+        TextColor3 = theme.palette.text,
+        FontFace = theme.fontBold,
+        AutoButtonColor = false,
+
+        [OnEvent "MouseEnter"] = function() hovering:set(true) end,
+        [OnEvent "MouseLeave"] = function() hovering:set(false) end,
+        [OnEvent "Activated"] = function()
+            if props.OnClick and not peek(props.Disabled) then
+                props.OnClick()
+            end
+        end,
+
+        [Children] = {
+            scope:New "UICorner" { CornerRadius = theme.corner },
+        },
+    }
+end</code></pre>
+
+<h3>PlayerStore: factory, single writer, frozen snapshots</h3>
+<pre><code>local function PlayerStore(scope: Fusion.Scope&lt;any&gt;)
+    local coins = scope:Value(0)
+    local level = scope:Value(1)
+    local ownedIds = scope:Value(table.freeze({}))
+
+    local store = { Coins = coins, Level = level, OwnedIds = ownedIds }
+
+    function store.ApplySnapshot(data)
+        coins:set(data.Coins)
+        level:set(data.Level)
+        ownedIds:set(table.freeze(table.clone(data.OwnedIds)))
+    end
+
+    function store.Spend(amount): boolean
+        local current = peek(coins)
+        if current &lt; amount then
+            return false
+        end
+        coins:set(current - amount)
+        return true
+    end
+
+    function store.AddOwned(id)
+        local next = table.clone(peek(ownedIds))
+        table.insert(next, id)
+        ownedIds:set(table.freeze(next))
+    end
+
+    return store
+end</code></pre>
+<p>Note what the store does not have: no computed factories, no getters, no events. State objects are exposed directly for reading; methods are the only writers. When a screen needs derived state (like "does the player own item 4"), it builds that computed in its own scope, so the derivation dies with the screen instead of accumulating on the app-lifetime store scope.</p>
+
+<h3>ShopScreen: everything composed</h3>
+<p>A For-object over frozen config, per-item computeds, and store methods as the only writers:</p>
+<pre><code>local function ShopScreen(scope: Fusion.Scope&lt;any&gt;, props: { Stores: any })
+    local player = props.Stores.Player
+    local itemState = scope:Value(items)
+
+    local cards = scope:ForValues(itemState, function(use, itemScope, item)
+        return ItemCard(itemScope, {
+            Item = item,
+            Owned = itemScope:Computed(function(use2)
+                return table.find(use2(player.OwnedIds), item.id) ~= nil
+            end),
+            CanAfford = itemScope:Computed(function(use2)
+                return use2(player.Coins) >= item.price
+            end),
+            OnBuy = function(bought)
+                if player.Spend(bought.price) then
+                    player.AddOwned(bought.id)
+                end
+            end,
+        })
+    end)
+
+    return Panel(scope, {
+        Name = "ShopScreen",
+        Size = UDim2.fromOffset(420, 460),
+        Position = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Content = {
+            scope:New "ScrollingFrame" {
+                Size = UDim2.new(1, 0, 1, -36),
+                AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                [Children] = {
+                    scope:New "UIListLayout" { Padding = UDim.new(0, 6) },
+                    cards,
+                },
+            },
+        },
+    })
+end</code></pre>
+
+<h3>App: the bootstrap wiring</h3>
+<pre><code>local scope = scoped(Fusion, { Button = Button, Panel = Panel })
+local stores = { Player = PlayerStore(scope) }
+
+local gui = scope:New "ScreenGui" { Name = "FusionApp", ResetOnSpawn = false }
+gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local screenHost = scope:New "Frame" {
+    Size = UDim2.fromScale(1, 1),
+    BackgroundTransparency = 1,
+}
+screenHost.Parent = gui
+
+local router = Router(scope, {
+    Hub = function(s) return HubScreen(s, { Stores = stores }) end,
+    Shop = function(s) return ShopScreen(s, { Stores = stores }) end,
+}, screenHost)
+
+<span class="cm">-- HUD: persistent, coin label bound to the store, nav buttons drive the router</span>
+<span class="cm">-- (full listing in the place)</span>
+
+<span class="cm">-- mock replication bridge: swap for your remote listener (§6)</span>
+task.spawn(function()
+    stores.Player.ApplySnapshot({ Coins = 100, Level = 3, OwnedIds = {} })
+    while task.wait(1) do
+        stores.Player.Earn(5)
+    end
+end)
+
+router.Navigate("Hub")</code></pre>
+<p>Swap the mock bridge for a real remote listener and the template becomes a production seed. The <code>Button.story</code> module inside works with the UI-Labs plugin out of the box (§14).</p>
+
+<h2 id="open">16 · Open questions</h2>
+<ul>
+  <li><strong>Answered by the lab passes:</strong> For-object scaling (§8: incremental caching confirmed, O(n) diff per update, 1,000 frames in 7.5&nbsp;ms), router architecture costs (§11: hidden bindings evaluate at full rate; gating zeroes them; create/destroy is ~0.14&nbsp;ms per screen and leak-free), evaluation semantics (§3: computeds are lazy with per-evaluation dependencies), tween interruption behavior (§9: smooth retarget from current value), error semantics (§10: stale-value-and-recover, isolated blast radius), and Hydrate ownership (§7: bindings die, instance survives).</li>
+  <li>Still open: how shipped Fusion games bridge replication into stores; §6's pattern is now lab-tested against a mock remote, but no open-source shipped-game codebase has been observed doing it.</li>
+  <li>Still open: Fusion 0.4's timeline and how much of a 0.3 framework survives it; 0.4 docs are draft; scopes and component signatures appear stable across the 0.3→0.4 draft docs, but nothing is guaranteed pre-1.0.</li>
+  <li>New from the lab: whether the silent no-op behavior of destroyed state objects (§2) is intended API contract or an implementation detail that could become a hard error in 0.4; code defensively either way.</li>
+</ul>
+
+<h2 id="sources">17 · Sources</h2>
+<ul>
+  <li>Official docs: <a href="https://elttob.uk/Fusion/0.3/">elttob.uk/Fusion/0.3</a>: scopes, computeds, observers, components, sharing values, optimisation tutorials; API reference for New, Out, OnEvent, ForValues/ForPairs/ForKeys, Tween, Spring.</li>
+  <li>Repository: <a href="https://github.com/dphfox/Fusion">github.com/dphfox/Fusion</a>: releases, <code>src/Memory/doCleanup.luau</code>, discussions #217 and #292.</li>
+  <li>Component libraries (0.2-era, patterns translated): <a href="https://github.com/virtualbutfake/fusion-components">virtualbutfake/fusion-components</a>, <a href="https://github.com/mvyasu/PluginEssentials">mvyasu/PluginEssentials</a>.</li>
+  <li>Negative result: <a href="https://github.com/devsarim/roblox-project-template">devsarim/roblox-project-template</a> verified as Roact/Rodux, not Fusion.</li>
+</ul>
+
+<p class="footer-note">Method, research pass: 5 parallel search angles → 15 sources fetched → falsifiable claims extracted → each claim independently attacked by 3 adversarial verifiers (2-of-3 refutations kill a claim) → surviving claims synthesized. Sections marked <span class="badge b-syn">synthesis</span> are architecture derived from verified primitives where no external source was verified.<br><br>
+Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modules, Rojo layout) into a clean Roblox Studio baseplate; 16 test groups executed via Luau in the live place covering scope lifecycles, evaluation semantics, component composition, similarity behavior, For-object caching and scaling (including ForPairs and nested Fors), animation (including interruption and typed springs), Contextual, Hydrate/Out/attribute keys, error resilience, router teardown, hidden-binding costs, graph stress (deep chains, 1,000-binding fan-out), a 100-cycle leak check, and a simulated UI-Labs story-contract run. All timings are Studio edit-mode, single-threaded; directional, not absolute. Compiled and lab-expanded 2026-07-04 for AnimeAttack development.</p>
+
+</div></div>
+
+</body>
+</html>
