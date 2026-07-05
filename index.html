@@ -29,6 +29,7 @@
     --v-fg: #86D8A0; --v-bg: #1C3A28;
     --d-fg: #85CBE0; --d-bg: #163540;
     --s-fg: #E4BE7C; --s-bg: #3B2F16;
+    --tk-k: #C586C0; --tk-s: #98C379; --tk-n: #D19A66; --tk-b: #61AFEF;
     color-scheme: dark;
   }
   .fb[data-theme="midnight"] {
@@ -39,6 +40,7 @@
     --v-fg: #8FE0A8; --v-bg: #15321F;
     --d-fg: #96A0FF; --d-bg: #1B2145;
     --s-fg: #E8C27E; --s-bg: #332911;
+    --tk-k: #B48EF0; --tk-s: #8FD0A0; --tk-n: #E0B070; --tk-b: #8B96F8;
   }
   .fb[data-theme="studio"] {
     --paper: #252829; --ink: #E8E8E8; --muted: #A0A6A8;
@@ -48,6 +50,7 @@
     --v-fg: #8CD9A0; --v-bg: #24402C;
     --d-fg: #85CBE5; --d-bg: #1E3946;
     --s-fg: #E2BC7A; --s-bg: #403213;
+    --tk-k: #F86D7C; --tk-s: #ADF195; --tk-n: #FFC600; --tk-b: #84D6F7;
   }
   .fb[data-theme="light"] {
     --paper: #FBFCFD; --ink: #1B232B; --muted: #5A6774;
@@ -77,7 +80,11 @@
   .fb code { font-family: var(--mono); font-size: 0.86em; background: var(--code-inline); border-radius: 3px; padding: 0.08em 0.35em; }
   .fb pre { background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 1rem 1.2rem; overflow-x: auto; margin: 1.1rem 0 1.4rem; font-size: 0.82rem; line-height: 1.6; }
   .fb pre code { background: none; padding: 0; font-size: 1em; color: inherit; }
-  .fb pre .cm { color: var(--code-dim); }
+  .fb pre .cm, .fb pre .tk-c { color: var(--code-dim); }
+  .fb pre .tk-k { color: var(--tk-k); }
+  .fb pre .tk-s { color: var(--tk-s); }
+  .fb pre .tk-n { color: var(--tk-n); }
+  .fb pre .tk-b { color: var(--tk-b); }
   .fb .badge { display: inline-block; font-family: var(--mono); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 3px; padding: 0.15em 0.5em; vertical-align: 0.15em; margin-right: 0.4rem; }
   .fb .b-ver { color: var(--v-fg); background: var(--v-bg); }
   .fb .b-doc { color: var(--d-fg); background: var(--d-bg); }
@@ -1001,6 +1008,69 @@ Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modul
   var saved = null;
   try { saved = localStorage.getItem("fbTheme"); } catch (e) {}
   apply(valid.indexOf(saved) >= 0 ? saved : "dark");
+})();
+
+(function () {
+  var KEYWORDS = {};
+  "local function end if then else elseif return for in while do repeat until not and or true false nil break continue export type self".split(" ").forEach(function (w) { KEYWORDS[w] = 1; });
+  var BUILTINS = {};
+  ("print warn error pcall xpcall require task game workspace script Instance UDim UDim2 Vector2 Vector3 Color3 CFrame Enum TweenInfo Font math table string os ipairs pairs tostring tonumber typeof unpack "
+   + "Fusion scoped peek doCleanup innerScope deriveScope Value Computed Observer ForValues ForKeys ForPairs Tween Spring New Hydrate Children Child OnEvent OnChange Out Attribute AttributeChange AttributeOut Contextual Safe version")
+    .split(" ").forEach(function (w) { if (w) BUILTINS[w] = 1; });
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function highlight(code) {
+    var out = "";
+    var i = 0;
+    function push(cls, s) {
+      out += cls ? '<span class="' + cls + '">' + esc(s) + "</span>" : esc(s);
+    }
+    while (i < code.length) {
+      var ch = code[i];
+      if (ch === "-" && code[i + 1] === "-") {
+        var j = code.indexOf("\n", i);
+        if (j < 0) j = code.length;
+        push("tk-c", code.slice(i, j));
+        i = j;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") {
+        var q = ch;
+        var j = i + 1;
+        while (j < code.length && code[j] !== q) {
+          if (code[j] === "\\") j++;
+          j++;
+        }
+        j = Math.min(j + 1, code.length);
+        push("tk-s", code.slice(i, j));
+        i = j;
+        continue;
+      }
+      if (ch >= "0" && ch <= "9") {
+        var m = /^[0-9][0-9_]*\.?[0-9]*/.exec(code.slice(i));
+        push("tk-n", m[0]);
+        i += m[0].length;
+        continue;
+      }
+      if (/[A-Za-z_]/.test(ch)) {
+        var m = /^[A-Za-z_][A-Za-z0-9_]*/.exec(code.slice(i));
+        var w = m[0];
+        push(KEYWORDS[w] ? "tk-k" : BUILTINS[w] ? "tk-b" : "", w);
+        i += w.length;
+        continue;
+      }
+      push("", ch);
+      i++;
+    }
+    return out;
+  }
+
+  document.querySelectorAll(".fb pre code").forEach(function (block) {
+    block.innerHTML = highlight(block.textContent);
+  });
 })();
 </script>
 
