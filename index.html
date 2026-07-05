@@ -160,6 +160,31 @@
   <tr><td><code>doCleanup</code></td><td><code>doCleanup(...tasks)</code></td><td>Universal destructor: reverse order, type-dispatched (functions called, instances destroyed, connections disconnected, tables recursed). Destroyed content is irrecoverable and fails silently afterward (§2).</td><td>✓</td></tr>
   <tr><td><code>cleanup</code></td><td><em>legacy alias</em></td><td>Old name for <code>doCleanup</code>, kept for 0.2 compatibility. Use <code>doCleanup</code> in new code.</td><td></td></tr>
 </table></div>
+<p>In practice (every output comment below was executed and verified in Studio):</p>
+<pre><code>local Fusion = require(ReplicatedStorage.Fusion)
+local scoped, peek, doCleanup = Fusion.scoped, Fusion.peek, Fusion.doCleanup
+
+local scope = scoped(Fusion)
+local health = scope:Value(100)
+
+table.insert(scope, function() print("cleanup A") end)
+table.insert(scope, function() print("cleanup B") end)
+
+local inner = scope:innerScope()
+table.insert(inner, function() print("cleanup inner") end)
+
+local detached = scope.deriveScope(scope)
+table.insert(detached, function() print("cleanup detached") end)
+
+doCleanup(scope)
+<span class="cm">-- &gt; cleanup inner    (inner scopes die with their parent)
+-- &gt; cleanup B        (then the parent, reverse creation order)
+-- &gt; cleanup A
+-- "cleanup detached" did NOT print: deriveScope shares methods, not lifetime</span>
+
+health:set(50) <span class="cm">-- silent no-op: destroyed objects never error, they just stop working</span>
+
+doCleanup(detached) <span class="cm">-- &gt; cleanup detached</span></code></pre>
 
 <h3>State and the graph</h3>
 <div class="tablewrap"><table>
@@ -172,6 +197,75 @@
   <tr><td><code>ForKeys</code></td><td><code>scope:ForKeys(tbl, fn(use, scope, k)) → For</code></td><td>Transforms keys, preserves values. Reprocesses only affected keys (§8).</td><td>✓</td></tr>
   <tr><td><code>ForPairs</code></td><td><code>scope:ForPairs(tbl, fn(use, scope, k, v)) → For</code></td><td>Transforms both. One changed pair reprocesses exactly that pair (§8).</td><td>✓</td></tr>
 </table></div>
+<pre><code>local coins = scope:Value(100)
+local price = scope:Value(75)
+
+local evaluations = 0
+local canAfford = scope:Computed(function(use)
+    evaluations += 1
+    return use(coins) &gt;= use(price)
+end)
+
+print(evaluations)     <span class="cm">-- &gt; 0     lazy: nothing has run yet</span>
+print(peek(canAfford)) <span class="cm">-- &gt; true</span>
+print(evaluations)     <span class="cm">-- &gt; 1     the first read evaluated it</span>
+
+coins:set(100)         <span class="cm">-- same value: the similarity check skips the update</span>
+peek(canAfford)
+print(evaluations)     <span class="cm">-- &gt; 1     no recompute</span>
+
+coins:set(10)
+print(peek(canAfford)) <span class="cm">-- &gt; false</span>
+print(evaluations)     <span class="cm">-- &gt; 2</span>
+
+<span class="cm">-- peek() inside a computed does NOT register a dependency:</span>
+local label = scope:Computed(function(use)
+    return `{use(coins)} / {peek(price)} coins`
+end)
+peek(label)
+price:set(50)          <span class="cm">-- label never re-evaluates for price changes (verified)</span>
+
+<span class="cm">-- Observers are the side-effect primitive:</span>
+local obs = scope:Observer(coins)
+obs:onChange(function()
+    print("coins changed to", peek(coins))
+end)
+obs:onBind(function()   <span class="cm">-- fires immediately, then on every change</span>
+    print("bound at", peek(coins))
+end)
+<span class="cm">-- &gt; bound at 10</span>
+
+coins:set(25)
+<span class="cm">-- &gt; bound at 25
+-- &gt; coins changed to 25
+-- all of these connections disconnect automatically at doCleanup(scope)</span>
+
+<span class="cm">-- For-objects: incremental collection transforms</span>
+local items = scope:Value(table.freeze({ "sword", "shield" }))
+
+local labels = scope:ForValues(items, function(use, itemScope, name)
+    print("processing", name)
+    table.insert(itemScope, function() print("cleaned", name) end)
+    return name:upper()
+end)
+peek(labels)
+<span class="cm">-- &gt; processing sword / processing shield (order not guaranteed)</span>
+
+items:set(table.freeze({ "sword", "shield", "bow" }))
+peek(labels)
+<span class="cm">-- &gt; processing bow   (ONLY the new value runs the processor)</span>
+
+items:set(table.freeze({ "sword", "bow" }))
+peek(labels)
+<span class="cm">-- "cleaned shield" runs. Verified caveat: sibling scopes can also be
+-- recycled here without reprocessing, so treat per-item cleanup timing
+-- as an implementation detail, not a removal signal (§8).</span>
+
+local settings = scope:Value(table.freeze({ music = 0.8, sfx = 0.5 }))
+local byLabel = scope:ForPairs(settings, function(use, s, key, volume)
+    return key:upper(), math.round(volume * 100)
+end)
+print(peek(byLabel).MUSIC) <span class="cm">-- &gt; 80</span></code></pre>
 
 <h3>Roblox instances and special keys</h3>
 <div class="tablewrap"><table>
@@ -187,6 +281,43 @@
   <tr><td><code>AttributeChange</code></td><td><code>[AttributeChange "Power"] = fn(new)</code></td><td>Attribute-changed callback.</td><td></td></tr>
   <tr><td><code>AttributeOut</code></td><td><code>[AttributeOut "Power"] = someValue</code></td><td>Attribute changes written back into a Value (§7).</td><td>✓</td></tr>
 </table></div>
+<pre><code>local text = scope:Value("Hello")
+local typed = scope:Value("")
+
+local box = scope:New "TextBox" {
+    Name = "Greeting",
+    Text = text,                      <span class="cm">-- state binds; re-assigns on every :set()</span>
+    Size = UDim2.fromOffset(200, 40),
+
+    [OnEvent "Focused"] = function()
+        print("focused")
+    end,
+    [OnChange "Text"] = function(new)
+        print("text is now", new)     <span class="cm">-- fires with the new value</span>
+    end,
+    [Out "Text"] = typed,             <span class="cm">-- player edits flow back into `typed`</span>
+    [Attribute "Validated"] = scope:Computed(function(use)
+        return #use(typed) &gt; 0        <span class="cm">-- attributes bind reactively too</span>
+    end),
+
+    [Children] = {
+        scope:New "UICorner" {},
+    },
+}
+
+text:set("Hi")
+print(box.Text)  <span class="cm">-- &gt; Hi    on this same line: bindings apply synchronously</span>
+
+box.Text = "typed!"
+<span class="cm">-- next frame: peek(typed) == "typed!" and box:GetAttribute("Validated") == true (verified)</span>
+
+<span class="cm">-- Hydrate binds onto an existing instance WITHOUT taking ownership:</span>
+local sign = scope:Hydrate(existingLabel) {
+    Text = text,        <span class="cm">-- sign.Text is now "Hi" and tracks `text`</span>
+}
+
+doCleanup(scope)
+<span class="cm">-- box (New) is destroyed; existingLabel (Hydrate) survives, bindings removed (verified)</span></code></pre>
 
 <h3>Animation</h3>
 <div class="tablewrap"><table>
@@ -194,6 +325,27 @@
   <tr><td><code>Tween</code></td><td><code>scope:Tween(goal, tweenInfo?) → Tween</code></td><td>State object that follows its goal along an easing curve. <code>tweenInfo</code> can be reactive. Interruption re-tweens smoothly from the current value (§9).</td><td>✓</td></tr>
   <tr><td><code>Spring</code></td><td><code>scope:Spring(goal, speed?, damping?) → Spring</code></td><td>Physics-based following; speed and damping can be reactive. Damping 1 is critical (no overshoot). Works on numbers, UDim2, Color3, and other animatable types (§9).</td><td>✓</td></tr>
 </table></div>
+<pre><code><span class="cm">-- Both are state objects that FOLLOW a goal; bind properties to them directly.</span>
+local open = scope:Value(false)
+
+local slide = scope:Spring(scope:Computed(function(use)
+    return if use(open) then UDim2.fromScale(0.5, 0.5) else UDim2.fromScale(0.5, 1.5)
+end), 25, 1)
+
+scope:New "Frame" {
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = slide,  <span class="cm">-- animates every frame; the goal computed re-ran only 3x in our bench</span>
+}
+open:set(true)         <span class="cm">-- physics does the rest; converged by ~500ms at speed 25 (verified)</span>
+
+<span class="cm">-- Tween follows an easing curve; the TweenInfo itself can be reactive:</span>
+local info = scope:Value(TweenInfo.new(0.2, Enum.EasingStyle.Linear))
+local progress = scope:Value(0)
+local eased = scope:Tween(progress, info)
+
+progress:set(1)   <span class="cm">-- animates 0 to 1 over 0.2s (measured 1.00 when settled)</span>
+progress:set(0)   <span class="cm">-- retargets smoothly from wherever it is: measured 0.59 mid-flight,
+                  -- no snapping (verified; the docs leave this behavior unstated)</span></code></pre>
 
 <h3>Utilities</h3>
 <div class="tablewrap"><table>
@@ -202,6 +354,35 @@
   <tr><td><code>Safe</code></td><td><code>Safe { try = fn, fallback = fn(err) }</code></td><td>Inline xpcall variant: returns <code>try</code>'s result, or <code>fallback</code>'s result on error. For fallible work inside computeds.</td><td></td></tr>
   <tr><td><code>version</code></td><td><code>{ major = 0, minor = 3, isRelease = true }</code></td><td>Version table, straight from the source.</td><td>✓</td></tr>
 </table></div>
+<pre><code><span class="cm">-- Contextual: shared values with scoped overrides, the sanctioned globals alternative</span>
+local CurrentTheme = Fusion.Contextual("dark")
+
+print(CurrentTheme:now())      <span class="cm">-- &gt; dark</span>
+
+CurrentTheme:is("light"):during(function()
+    print(CurrentTheme:now())  <span class="cm">-- &gt; light   (only inside this callback)</span>
+    BuildSettingsScreen(scope) <span class="cm">-- construction-time reads here see "light"</span>
+end)
+
+print(CurrentTheme:now())      <span class="cm">-- &gt; dark    (verified)</span>
+
+<span class="cm">-- Trap (verified in §6): a computed BUILT during the override but first READ
+-- afterward sees "dark", because computeds evaluate lazily at read time.
+-- Read :now() in component-body code and capture the result.</span>
+
+<span class="cm">-- Safe: inline error handling with a typed fallback</span>
+local data = Fusion.Safe {
+    try = function()
+        return HttpService:JSONDecode(raw)
+    end,
+    fallback = function(err)
+        warn("bad payload:", err)
+        return {}
+    end,
+}
+<span class="cm">-- returns try's result normally, fallback's result on error (both paths verified)</span>
+
+print(Fusion.version.major, Fusion.version.minor) <span class="cm">-- &gt; 0 3</span></code></pre>
 <p>Exported types, for annotating your own code: <code>Scope&lt;S&gt;</code>, <code>UsedAs&lt;T&gt;</code> (raw value or state object; the props workhorse, §4), <code>Use</code>, <code>StateObject&lt;T&gt;</code>, <code>Value&lt;T&gt;</code>, <code>Computed&lt;T&gt;</code>, <code>For&lt;KO, VO&gt;</code>, <code>Observer</code>, <code>Spring&lt;T&gt;</code>, <code>Tween&lt;T&gt;</code>, <code>Animatable</code>, <code>Task</code>, <code>SpecialKey</code>, <code>PropertyTable</code>, <code>Child</code>, <code>ScopedObject</code>, <code>GraphObject</code>, <code>Contextual&lt;T&gt;</code>, <code>Version</code>.</p>
 
 <h2 id="uilabs-ref">UI-Labs at a glance</h2>
@@ -446,7 +627,7 @@ scope:New "ScrollingFrame" { [Children] = cards }</code></pre>
 <p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forvalues/">ForValues</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forpairs/">ForPairs</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forkeys/">ForKeys</a></p>
 <div class="lab"><div class="lab-title">Lab results: incremental behavior confirmed, and the real scaling shape</div>
 <ul>
-  <li><span class="badge b-lab">lab tested</span>Removing one value from a 5-item <code>ForValues</code> ran the processor <strong>zero</strong> additional times and cleaned exactly the removed item's scope; adding one ran it exactly once. <code>ForKeys</code> over 100 keys reprocessed exactly 1 key when 1 was added. Per-item caching is real (frozen items are cached by identity; another reason to freeze).</li>
+  <li><span class="badge b-lab">lab tested</span>Removing one value from a 5-item <code>ForValues</code> ran the processor <strong>zero</strong> additional times and cleaned exactly the removed item's scope; adding one ran it exactly once. <code>ForKeys</code> over 100 keys reprocessed exactly 1 key when 1 was added. Per-item caching is real (frozen items are cached by identity; another reason to freeze). One caveat from a later run: on a removal, sibling items' scopes were sometimes recycled too, still without reprocessing; rely on processor-call counts for cost reasoning, and treat per-item cleanup timing as an implementation detail rather than a removal signal.</li>
   <li><strong>The per-update cost is the table diff, not the processing.</strong> At 1,000 items, a single-item add cost ~4.7&nbsp;ms whether the processor returned plain data or built Frames: Fusion scans the new table against the old one, so updates scale O(n) with collection size even when one item changed. Cheap at game-UI scale, but don't put a 10,000-row table behind one For-object and update it per-frame.</li>
   <li><code>ForPairs</code> confirmed equally incremental: changing one value in a 3-pair dictionary reprocessed exactly that pair, and key/value inversion round-tripped correctly.</li>
   <li><strong>Nested For-objects work, but budget for branch rebuilds.</strong> An outer <code>ForValues</code> of lists with an inner <code>ForValues</code> per list produced correct output and cascaded cleanup on removal. But removing one outer list also recycled the <em>surviving</em> list's per-item scopes in our bench (5 cleanups where the minimum would be 3). Don't assume nested structures rebuild only the removed branch; keep per-item work in nested Fors cheap or flatten the data.</li>
