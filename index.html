@@ -71,23 +71,22 @@
   .fb .tbtn { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.35em 0.8em; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
   .fb .tbtn[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); }
   .fb .tbtn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
-  .fb .layout { display: grid; grid-template-columns: 230px minmax(0, 74ch); gap: 3.2rem; max-width: 1120px; margin: 0 auto; align-items: start; }
-  .fb nav.side { position: sticky; top: 0; max-height: 100vh; overflow-y: auto; padding: 0.5rem 0 2rem; font-family: var(--display); scrollbar-width: thin; }
-  .fb .navtitle { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); margin: 0.6rem 0 0.2rem; }
-  .fb .navbox summary { display: none; }
-  .fb .navgroup { display: block; font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 1.1rem 0 0.3rem; }
-  .fb .navlinks a { display: block; font-size: 0.85rem; color: var(--muted); text-decoration: none; padding: 0.16rem 0.55rem; border-left: 2px solid transparent; border-radius: 0 4px 4px 0; }
-  .fb .navlinks a:hover { color: var(--ink); }
-  .fb .navlinks a.active { color: var(--accent-ink); border-left-color: var(--accent); background: var(--card); }
-  .fb nav.side .themebar { justify-content: flex-start; margin: 1.6rem 0 0; }
-  @media (max-width: 920px) {
-    .fb .layout { display: block; }
-    .fb nav.side { position: sticky; z-index: 50; background: var(--paper); border-bottom: 1px solid var(--line); max-height: none; overflow: visible; margin: -2.5rem -1.5rem 2rem; padding: 0.7rem 1.5rem; }
-    .fb .navbox summary { display: block; cursor: pointer; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
-    .fb .navlinks { columns: 2; column-gap: 1.5rem; padding-top: 0.6rem; }
-    .fb .navlinks a { border-left: none; break-inside: avoid; }
-    .fb .navtitle { display: none; }
-    .fb nav.side .themebar { margin: 0.8rem 0 0.2rem; }
+  .fb .topbar { position: sticky; top: 0; z-index: 60; background: var(--paper); border-bottom: 1px solid var(--line); margin: -3.5rem -1.5rem 2.4rem; padding: 0.55rem 1.5rem; }
+  .fb .topbar-inner { max-width: 74ch; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+  .fb .bartitle { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); margin-right: 0.6rem; }
+  .fb .tab { font-family: var(--display); font-size: 0.85rem; font-weight: 650; padding: 0.38em 0.8em; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
+  .fb .tab:hover { color: var(--ink); }
+  .fb .tab[aria-selected="true"] { color: var(--accent-ink); background: var(--card); border-color: var(--line); }
+  .fb .tab:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+  .fb .topbar .themebar { margin-left: auto; }
+  .fb .tab-panel[hidden] { display: none; }
+  .fb .tab-panel > h2:first-child { border-top: none; padding-top: 0.6rem; margin-top: 1.2rem; }
+  @media print {
+    .fb .tab-panel[hidden] { display: block; }
+    .fb .topbar { position: static; }
+  }
+  @media (max-width: 700px) {
+    .fb .topbar .themebar { margin-left: 0; width: 100%; margin-top: 0.35rem; }
   }
   .fb .wrap { max-width: 74ch; margin: 0 auto; }
   .fb h1, .fb h2, .fb h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; }
@@ -136,49 +135,23 @@
   .fb .footer-note { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1.2rem; font-size: 0.85rem; color: var(--muted); font-family: var(--display); }
   @media (max-width: 640px) { .fb .toc { columns: 1; } .fb h1 { font-size: 1.8rem; } }
 </style>
-<div class="fb" data-theme="dark"><div class="layout">
-
-<nav class="side" aria-label="Contents">
-<div class="navtitle">Fusion 0.3 blueprint</div>
-<details open class="navbox">
-<summary>Contents</summary>
-<div class="navlinks">
-  <a href="#top">Overview</a>
-  <span class="navgroup">References</span>
-  <a href="#api">Fusion API</a>
-  <a href="#uilabs-ref">UI-Labs at a glance</a>
-  <a href="#fieldnotes">Community field notes</a>
-  <span class="navgroup">Foundations</span>
-  <a href="#version">1 · Version check</a>
-  <a href="#scopes">2 · Scopes</a>
-  <a href="#state">3 · State</a>
-  <a href="#components">4 · Components</a>
-  <span class="navgroup">Building</span>
-  <a href="#org">5 · Organization</a>
-  <a href="#stores">6 · Stores &amp; data</a>
-  <a href="#instances">7 · Instances &amp; keys</a>
-  <a href="#lists">8 · Lists</a>
-  <a href="#animation">9 · Animation</a>
-  <span class="navgroup">Shipping</span>
-  <a href="#perf">10 · Performance</a>
-  <a href="#routing">11 · Routing</a>
-  <a href="#migration">12 · 0.2 → 0.3</a>
-  <span class="navgroup">Context</span>
-  <a href="#alternatives">13 · React-lua &amp; Vide</a>
-  <a href="#uilabs">14 · UI-Labs workbench</a>
-  <a href="#template">15 · Template place</a>
-  <span class="navgroup">Closing</span>
-  <a href="#open">16 · Open questions</a>
-  <a href="#sources">17 · Sources</a>
-</div>
-</details>
+<div class="fb" data-theme="dark">
+<div class="topbar"><div class="topbar-inner">
+<span class="bartitle">Fusion 0.3</span>
+<button class="tab" data-tab="foundations" aria-selected="true">Foundations</button>
+<button class="tab" data-tab="building" aria-selected="false">Building</button>
+<button class="tab" data-tab="shipping" aria-selected="false">Shipping</button>
+<button class="tab" data-tab="ecosystem" aria-selected="false">Ecosystem</button>
+<button class="tab" data-tab="template" aria-selected="false">Template</button>
+<button class="tab" data-tab="reference" aria-selected="false">Reference</button>
+<button class="tab" data-tab="all" aria-selected="false">All</button>
 <div class="themebar" role="group" aria-label="Color theme">
   <button class="tbtn" data-set-theme="dark" aria-pressed="true">Dark</button>
   <button class="tbtn" data-set-theme="midnight" aria-pressed="false">Midnight</button>
   <button class="tbtn" data-set-theme="studio" aria-pressed="false">Studio</button>
   <button class="tbtn" data-set-theme="light" aria-pressed="false">Light</button>
 </div>
-</nav>
+</div></div>
 
 <div class="wrap">
 
@@ -197,6 +170,7 @@
 
 
 
+<section class="tab-panel" data-panel="reference">
 <h2 id="api">Fusion v0.3-beta: the complete API</h2>
 <p><span class="badge b-lab">lab tested</span>Everything Fusion exports, taken from the actual export table in the installed source (<code>src/init.luau</code>, 26 members), not from docs or memory. The lab column marks what was directly exercised in the Studio test passes. Constructors marked with a scope are called as scope methods under <code>scoped()</code> syntax, e.g. <code>scope:Value(0)</code>.</p>
 
@@ -452,6 +426,8 @@ print(Fusion.version.major, Fusion.version.minor) <span class="cm">-- &gt; 0 3</
 </table></div>
 <p>The reason this slots into the framework with zero adaptation: §4's convention types every reactive prop as <code>UsedAs&lt;T&gt;</code>, and UI-Labs hands you controls as state objects. A story is therefore also an architecture test; a component that cannot mount from scope, target, and a props table has hidden dependencies (§14).</p>
 
+</section>
+<section class="tab-panel" data-panel="foundations">
 <h2 id="version">1 · Version reality check</h2>
 <p><span class="badge b-ver">verified 3–0</span>The current release of Fusion is <strong>v0.3-beta</strong>, published 2024-08-30: GitHub's designated "Latest" and the only non-prerelease tag. A 0.4 exists only as an unreleased dev line (<code>0.4.0-dev1</code> in <code>wally.toml</code>) with draft docs. Everything in this report targets 0.3.</p>
 <p class="src">Sources: <a href="https://github.com/dphfox/Fusion/releases">dphfox/Fusion releases</a>, <a href="https://github.com/dphfox/Fusion">repo</a></p>
@@ -583,6 +559,8 @@ local ui = scope:Button {
   <li><code>[Children]</code>, <code>[OnEvent]</code> behaved as documented, and <code>doCleanup</code> on the owning scope destroyed the created instances.</li>
 </ul></div>
 
+</section>
+<section class="tab-panel" data-panel="building">
 <h2 id="org">5 · Project organization</h2>
 <p><span class="badge b-ver">verified 3–0</span>Mature Fusion codebases use <strong>one module per component</strong> with layered category folders. fusion-components splits <code>src/components</code> into <code>base/</code> primitives (button, frame, text, textBox, imageLabel, sinkFrame), <code>common/</code> composed pieces, and <code>utility/</code>, with <code>src/theme</code> separate and Flipbook stories colocated in-repo but excluded from the published package. PluginEssentials separates host-instance wrappers from visual components, with shared helpers isolated in <code>Util/</code>.</p>
 <pre><code>ReplicatedStorage/Client/UI/
@@ -720,6 +698,8 @@ scope:New "Frame" { Position = slide }  <span class="cm">-- flip menuOpen; physi
 </ul></div>
 <p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/tween/">Tween</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/spring/">Spring</a></p>
 
+</section>
+<section class="tab-panel" data-panel="shipping">
 <h2 id="perf">10 · Performance</h2>
 <p><span class="badge b-doc">official docs</span>Fusion skips updates that aren't "meaningfully different" via a <strong>similarity test</strong>. The rules, verbatim from the optimisation guide:</p>
 <ul>
@@ -798,6 +778,8 @@ end)</code></pre></li>
   <tr><td>Component = <code>(props)</code></td><td>Component = <code>(scope, props)</code></td><td>Enables <code>scope:Component{}</code> method syntax.</td></tr>
 </table></div>
 
+</section>
+<section class="tab-panel" data-panel="ecosystem">
 <h2 id="alternatives">13 · Context: React-lua and Vide</h2>
 <p><span class="badge b-syn">synthesis</span>No claims in this area survived to verification, so treat this as background judgment rather than researched fact. The architecture-relevant distinction: React-lua re-renders component functions and diffs a virtual tree, so its frameworks organize around render purity and memoization; Fusion (like Vide, which shares the fine-grained reactive model) runs component functions <em>once</em> and lets the dependency graph update individual properties directly. Consequences for everything above: components are construction-time code (no re-render loop to design for), state granularity is the performance lever (not memo boundaries), and lifetimes are explicit via scopes (not implied by unmounting). If a pattern you're importing comes from React-lua material, check whether it exists to solve re-rendering; if so, it likely has no Fusion equivalent and can be dropped.</p>
 
@@ -835,6 +817,77 @@ return {
 </ul></div>
 <p class="src">Sources: <a href="https://ui-labs.luau.page/">ui-labs.luau.page</a> (get started, installation, Fusion stories, function stories, controls), <a href="https://github.com/PepeElToro41/ui-labs">PepeElToro41/ui-labs</a> (v1.6.0, Jan 2026)</p>
 
+<h2 id="fieldnotes">Field notes: how the Fusion community actually works</h2>
+<p><span class="badge b-com">community</span>Sourced from 394 messages in the Roblox OSS Discord's Fusion channel (April 22 to July 5, 2026). This is the ground truth this guide would otherwise assume: what practitioners do, what trips them up, and where the architecture above should stay humble. Testable claims were checked in the lab; the results are inline.</p>
+
+<h3>Maintenance mode and the fork ecosystem</h3>
+<p>Beyond the author's June statement (§1), the channel's own read from May: "Prepare to wait for a while [for 0.4], if it will even come. Fusion is in a pretty good state right now." Meanwhile a small fork ecosystem carries fixes upstream won't ship: <a href="https://github.com/plainsour/Fusion">plainsour/Fusion</a> (spring sleeping re-enabled, detach fixes) and the actively developed <code>plainsour/lemon</code> Wally package (improved <code>Contextual</code>/<code>Value</code> types, <code>scope:detach</code> accepting tables, <code>doCleanup</code> calling <code>disconnect</code>/<code>Disconnect</code> on custom objects). Treat forks as options to evaluate against measured problems, not upgrades to install by default.</p>
+
+<h3>For-objects under churn</h3>
+<p><span class="badge b-com">community</span>An April report with a minimal repro: cycling a <code>ForPairs</code> input between 200 items and empty made "GUI memory climb and never drop," with the channel unable to explain it ("might be a bug"). A separate May report: v0.3's disassembly "destroys perfectly fine pairs which are then created again" without their dependency changing, and pairs are not automatically reused; one member wrote a custom reuse hook. <span class="badge b-lab">lab tested</span>We ran the leak repro on stock v0.3-beta with a weak-table liveness tracker, 20 add-200/clear cycles: <strong>no permanent leak</strong> (0 frames alive at rest, all collected without cleanup), but the transient pressure is real: mid-churn, up to 2,800 destroyed frames sat awaiting garbage collection with memory swinging tens of MB, which is exactly what a Studio memory graph shows as "climbing." The destroy-and-recreate report matches our own bench, which twice observed sibling scopes recycled on removals (§8). The practical rules: prefer incremental key changes over whole-table swaps when updates are frequent, keep For processors cheap because they may re-run more than the minimum, and if the memory graph climbs during churn, check whether it settles at idle before calling it a leak.</p>
+
+<h3>Not everything is a component</h3>
+<p>The most instructive thread: a developer with "12 levels of indentation" and "500 components" asking how to stay sane. The channel's answers, in order of preference: assign sub-trees to <strong>local variables</strong> (constructors return instances, so <code>local header = scope:New "Frame" {...}</code> then compose them), pull repeated chunks into <strong>local functions in the same file</strong>, use <code>do</code>/<code>end</code> blocks for editor folding, and only promote something to a component module <em>when it gets reused</em>. As one member put it about their deep one-off tree: "but its not gonna get reused." One member also cautioned that moving helpers to other modules or wrapping them in OOP carries a performance cost in Luau; whether or not that holds in your case, the instinct is right. Component modules are for reuse and stories; locals are for readability. A 500-component file is a readability failure, not a reason to build more framework.</p>
+
+<h3>Scope discipline and per-screen state files</h3>
+<p>Asked whether a component should create its own scope or receive one, the channel's answer is unanimous and matches Framework rule 1: <strong>components are always passed a scope; they never make their own</strong>. What does own a scope, in community practice, is what one member calls a "state file": a per-screen backend module (their example: <code>InventoryState</code> holding the selected item, max capacity, and the items to display) that the screen's components bind to. That sits neatly between this guide's global stores (§6) and per-component state: game-wide data lives in stores, screen-lifetime data lives in a state file owned by the screen's scope, and micro-state (hover, focus) lives in the component.</p>
+
+<h3>State granularity and nested tables</h3>
+<p>Two independent threads converge on the same rule: <strong>one Value per independently-changing property beats one big table</strong>. A member trying to observe a nested key inside a table Value found there is no built-in way to avoid firing on sibling changes (the whole table is one similarity unit, §10); the channel's answers were "make the nested table its own Value" or write a custom path-derivation hook. Another member's advice for dynamic data like position, health, and cooldowns: separate Values per property. And on store shape, the pattern one member described for module-level state matches §6's single-writer factories: "I don't let other code access my state directly but rather they use wrapper functions to modify the state... it's safer... easier to read and distinguish what I'm doing."</p>
+
+<h3>Derive, don't observe</h3>
+<p>A beginner bound a property by watching a value with an <code>Observer</code> and manually setting the property. The correction given in-channel is the rule this guide's §3 implies, stated plainly: <strong>if a property can be expressed as a function of state, use a <code>Computed</code> binding; Observers are only for side effects that leave the reactive world</strong> (sounds, analytics, camera shakes). An Observer-plus-manual-set is always a smell when the target is an instance property.</p>
+
+<h3>The instant-reset tween idiom</h3>
+<p>Asked how to snap a tween back to its start without animating, three separate members converged on the same pattern this guide's lab confirmed reactive <code>TweenInfo</code> makes possible: hold the <code>TweenInfo</code> in state, and set a zero-duration info for the frame where you want a snap.</p>
+<pre><code>local info = scope:Value(TweenInfo.new(0.3))
+local progress = scope:Tween(target, info)
+
+local function snapTo(value)
+    info:set(TweenInfo.new(0))  <span class="cm">-- zero-duration: next change is instant</span>
+    target:set(value)
+    task.defer(function()
+        info:set(TweenInfo.new(0.3))
+    end)
+end</code></pre>
+
+<h3>Springs and the sleep question</h3>
+<p><span class="badge b-com">community</span>Members report that "springs don't sleep" (<a href="https://github.com/dphfox/Fusion/issues/370">issue #370</a>), meaning settled springs keep consuming frame time, and recommend <a href="https://github.com/plainsour/Fusion">plainsour's fork</a> (based on 0.3) which re-enables spring sleeping plus detach and cleanup fixes. <span class="badge b-lab">lab tested</span>This did <strong>not reproduce</strong> on stock v0.3-beta in our bench: 2,000 unbound settled springs cost +0.02&nbsp;ms per frame, 1,000 property-bound settled springs +0.02&nbsp;ms, and even 1,000 underdamped springs (damping 0.2) returned to baseline within 3 seconds of settling; only actively animating springs cost real time (+8.5&nbsp;ms for 1,000 in motion). The honest conclusion: measure in your own game before adopting a fork. If your profiler shows settled springs burning frames, the fork exists; do not switch on hearsay.</p>
+
+<h3>Sizing and scaling</h3>
+<p>A recurring question with no built-in answer: how do you scale offset-based UI across resolutions when everything is code? The community's tool of choice is <code>usePx</code> from <a href="https://github.com/znotfireman/pretty-fusion-utils">pretty-fusion-utils</a>, a scale-factor helper in the spirit of the classic px pattern. Its ergonomics have sharp edges (the <code>px()</code> call cannot be used inside a computed because of scope capture, so values get declared outside), and the in-channel recommendation for the cleanest high-performance shape is to surface the scale as one state and multiply inside your computeds:</p>
+<pre><code>local pxScale = px:getScale()
+
+Size = scope:Computed(function(use)
+    local scale = use(pxScale)
+    return UDim2.fromOffset(DOT_SIZE.X * scale, DOT_SIZE.Y * scale)
+end)</code></pre>
+<p>The alternative is staying Scale-based (<code>UDim2.fromScale</code> plus aspect-ratio constraints), which needs no helper at all. Pick one per project; the template uses offsets for legibility and is small enough to convert either way.</p>
+
+<h3>Code, templates, and the team question</h3>
+<p>"Is it better to have a static UI template and hydrate it, or do everything by code?" The channel's answer: either works, <strong>stay consistent</strong>. The regulars prefer full code (easier to reference and manipulate what you built), and this guide is written for that mode. But one member's caveat is worth quoting for any team: "I prefer doing it by code but as soon as you're working with non-programmers that idea gets thrown out the window," against which another argued for making non-programmers adapt ("workflows that are programmer oriented should be prioritized"). If your team lands on designer-built trees, <code>Hydrate</code> is the bridge (§7: bindings die on cleanup, instances survive), and the paid <a href="https://create.roblox.com/store/asset/4749111907">Codify</a> plugin converts Studio-built UI into Fusion code.</p>
+
+<h3>Transient elements without ceremony</h3>
+<p>For notifications and other timed elements, the community pattern is exactly as boring as it should be: a component module, created into a container per event, torn down after a delay. When a member wondered about caching instead of destroy-and-recreate, the in-channel reply was the right default posture: "Tbh idk how much more performance that would bring. Do you have issues with frame drops or smth?" Given §11's measured 0.14&nbsp;ms create/destroy cycles, build the simple version first.</p>
+
+<h3>UI-Labs discipline, confirmed the hard way</h3>
+<p>A newcomer built components inside stories referencing <code>props.controls</code> directly, then struggled to "transfer UI-Labs UI to Fusion." The channel's correction matches §14 exactly: <strong>components never see UI-Labs</strong>. Write the component module first, taking plain props; the story exists only to preview it, mapping controls to props at the boundary: "generally you would just start with ur component module from the beginning, and only have the story for previewing it." If removing UI-Labs from your place would break a component, the dependency points the wrong way.</p>
+
+<h3>Smaller habits worth adopting</h3>
+<ul>
+  <li><strong>Timers:</strong> Fusion has no clock. Drive a <code>Value</code> from an external loop (<code>while task.wait(1) do timeLeft:set(...) end</code>) and derive everything else from it. The channel's answer to "is there some way in fusion" was simply "yes, an external loop."</li>
+  <li><strong>Dynamic data granularity:</strong> for frequently-changing data (position, health, cooldowns), keep a separate <code>Value</code> per property rather than one table state; this matches §10's granular-computed guidance from the similarity angle.</li>
+  <li><strong>Player state lives in its own module</strong>, away from UI code; members with custom state managers bind UI to them exactly like §6's store bridge.</li>
+  <li><strong>Fusion without its animations is still Fusion:</strong> asked whether Fusion is overkill alongside an existing animation library, the channel's answer: the point is reactivity and declarative instance trees; Tween and Spring are extras. Several members run their own animation hooks on top.</li>
+  <li><strong>Gotchas that cost people an afternoon:</strong> <code>FontFace</code> takes a <code>Font</code>, not an <code>Enum.Font</code> (use <code>Font.fromEnum(Enum.Font.X)</code>, as the template does); the <code>InfiniteLoop</code> error can be triggered by yielding code around a <code>:set()</code>, and one of its variants is not documented; the attribute special keys are easy to miss entirely (one member: "I've never seen it in the tutorials. I just looked for Attribute in the documentation"); and any example using <code>:get()</code> means the whole snippet predates 0.3 (§1).</li>
+  <li><strong>Tooling edges:</strong> roblox-ts users have <code>@rbxts/fusion</code> (no JSX) and <code>@rbxts/hotfusion</code> (JSX support); property autocomplete tooling for 0.3 is spotty; Studio's new CSS-like styling system's relationship to Fusion props was asked and never answered (now in §16's open questions).</li>
+</ul>
+
+<h3>On theming</h3>
+<p>Fourteen days of practitioner conversation and not one mention of themes, which matches how Roblox games ship: one deliberate visual identity, no runtime theme switching. This guide's earlier sections keep a <code>theme</code> module because centralized <em>design tokens</em> (colors, fonts, spacing in one frozen table) cost nothing and keep 50 components consistent. That is not a theming system, and you should not build one: no theme objects threaded through props, no reactive palette state, no light/dark infrastructure, unless your game has an actual feature that needs it. If that day comes, the pieces already exist (a <code>Contextual</code> holding a token table, read at construction time per §6's trap warning); until then, constants are the correct amount of engineering.</p>
+
+</section>
+<section class="tab-panel" data-panel="template">
 <h2 id="template">15 · The template place</h2>
 <p><span class="badge b-lab">lab tested</span>Everything in this guide, distilled into a runnable starter place: Fusion v0.3-beta (75 modules, built from the official source tree) plus a complete miniature framework following every convention above: theme tokens, base and composed components, a store factory with single-writer methods and frozen snapshots, the hybrid router, two screens (one with a For-object shop list and a working buy flow), a UI-Labs story, and a client bootstrap with a mock replication bridge. It was verified live before packaging: the shop mounts six reactive cards, buying flips a card to "Owned" and deducts coins, unaffordable items disable themselves, navigation destroys and rebuilds screens with zero leaked instances, and the HUD coin counter ticks from the store bridge.</p>
 <p><a download="fusion-template.rbxlx" href="fusion-template.rbxlx"><strong>⬇ Download fusion-template.rbxlx</strong></a> (~180&nbsp;KB, XML place format; open directly in Roblox Studio via double-click or File → Open, then press Play). No dependencies, no external assets, MIT-licensed Fusion inside.</p>
@@ -1016,75 +1069,6 @@ end)
 router.Navigate("Hub")</code></pre>
 <p>Swap the mock bridge for a real remote listener and the template becomes a production seed. The <code>Button.story</code> module inside works with the UI-Labs plugin out of the box (§14).</p>
 
-<h2 id="fieldnotes">Field notes: how the Fusion community actually works</h2>
-<p><span class="badge b-com">community</span>Sourced from 394 messages in the Roblox OSS Discord's Fusion channel (April 22 to July 5, 2026). This is the ground truth this guide would otherwise assume: what practitioners do, what trips them up, and where the architecture above should stay humble. Testable claims were checked in the lab; the results are inline.</p>
-
-<h3>Maintenance mode and the fork ecosystem</h3>
-<p>Beyond the author's June statement (§1), the channel's own read from May: "Prepare to wait for a while [for 0.4], if it will even come. Fusion is in a pretty good state right now." Meanwhile a small fork ecosystem carries fixes upstream won't ship: <a href="https://github.com/plainsour/Fusion">plainsour/Fusion</a> (spring sleeping re-enabled, detach fixes) and the actively developed <code>plainsour/lemon</code> Wally package (improved <code>Contextual</code>/<code>Value</code> types, <code>scope:detach</code> accepting tables, <code>doCleanup</code> calling <code>disconnect</code>/<code>Disconnect</code> on custom objects). Treat forks as options to evaluate against measured problems, not upgrades to install by default.</p>
-
-<h3>For-objects under churn</h3>
-<p><span class="badge b-com">community</span>An April report with a minimal repro: cycling a <code>ForPairs</code> input between 200 items and empty made "GUI memory climb and never drop," with the channel unable to explain it ("might be a bug"). A separate May report: v0.3's disassembly "destroys perfectly fine pairs which are then created again" without their dependency changing, and pairs are not automatically reused; one member wrote a custom reuse hook. <span class="badge b-lab">lab tested</span>We ran the leak repro on stock v0.3-beta with a weak-table liveness tracker, 20 add-200/clear cycles: <strong>no permanent leak</strong> (0 frames alive at rest, all collected without cleanup), but the transient pressure is real: mid-churn, up to 2,800 destroyed frames sat awaiting garbage collection with memory swinging tens of MB, which is exactly what a Studio memory graph shows as "climbing." The destroy-and-recreate report matches our own bench, which twice observed sibling scopes recycled on removals (§8). The practical rules: prefer incremental key changes over whole-table swaps when updates are frequent, keep For processors cheap because they may re-run more than the minimum, and if the memory graph climbs during churn, check whether it settles at idle before calling it a leak.</p>
-
-<h3>Not everything is a component</h3>
-<p>The most instructive thread: a developer with "12 levels of indentation" and "500 components" asking how to stay sane. The channel's answers, in order of preference: assign sub-trees to <strong>local variables</strong> (constructors return instances, so <code>local header = scope:New "Frame" {...}</code> then compose them), pull repeated chunks into <strong>local functions in the same file</strong>, use <code>do</code>/<code>end</code> blocks for editor folding, and only promote something to a component module <em>when it gets reused</em>. As one member put it about their deep one-off tree: "but its not gonna get reused." One member also cautioned that moving helpers to other modules or wrapping them in OOP carries a performance cost in Luau; whether or not that holds in your case, the instinct is right. Component modules are for reuse and stories; locals are for readability. A 500-component file is a readability failure, not a reason to build more framework.</p>
-
-<h3>Scope discipline and per-screen state files</h3>
-<p>Asked whether a component should create its own scope or receive one, the channel's answer is unanimous and matches Framework rule 1: <strong>components are always passed a scope; they never make their own</strong>. What does own a scope, in community practice, is what one member calls a "state file": a per-screen backend module (their example: <code>InventoryState</code> holding the selected item, max capacity, and the items to display) that the screen's components bind to. That sits neatly between this guide's global stores (§6) and per-component state: game-wide data lives in stores, screen-lifetime data lives in a state file owned by the screen's scope, and micro-state (hover, focus) lives in the component.</p>
-
-<h3>State granularity and nested tables</h3>
-<p>Two independent threads converge on the same rule: <strong>one Value per independently-changing property beats one big table</strong>. A member trying to observe a nested key inside a table Value found there is no built-in way to avoid firing on sibling changes (the whole table is one similarity unit, §10); the channel's answers were "make the nested table its own Value" or write a custom path-derivation hook. Another member's advice for dynamic data like position, health, and cooldowns: separate Values per property. And on store shape, the pattern one member described for module-level state matches §6's single-writer factories: "I don't let other code access my state directly but rather they use wrapper functions to modify the state... it's safer... easier to read and distinguish what I'm doing."</p>
-
-<h3>Derive, don't observe</h3>
-<p>A beginner bound a property by watching a value with an <code>Observer</code> and manually setting the property. The correction given in-channel is the rule this guide's §3 implies, stated plainly: <strong>if a property can be expressed as a function of state, use a <code>Computed</code> binding; Observers are only for side effects that leave the reactive world</strong> (sounds, analytics, camera shakes). An Observer-plus-manual-set is always a smell when the target is an instance property.</p>
-
-<h3>The instant-reset tween idiom</h3>
-<p>Asked how to snap a tween back to its start without animating, three separate members converged on the same pattern this guide's lab confirmed reactive <code>TweenInfo</code> makes possible: hold the <code>TweenInfo</code> in state, and set a zero-duration info for the frame where you want a snap.</p>
-<pre><code>local info = scope:Value(TweenInfo.new(0.3))
-local progress = scope:Tween(target, info)
-
-local function snapTo(value)
-    info:set(TweenInfo.new(0))  <span class="cm">-- zero-duration: next change is instant</span>
-    target:set(value)
-    task.defer(function()
-        info:set(TweenInfo.new(0.3))
-    end)
-end</code></pre>
-
-<h3>Springs and the sleep question</h3>
-<p><span class="badge b-com">community</span>Members report that "springs don't sleep" (<a href="https://github.com/dphfox/Fusion/issues/370">issue #370</a>), meaning settled springs keep consuming frame time, and recommend <a href="https://github.com/plainsour/Fusion">plainsour's fork</a> (based on 0.3) which re-enables spring sleeping plus detach and cleanup fixes. <span class="badge b-lab">lab tested</span>This did <strong>not reproduce</strong> on stock v0.3-beta in our bench: 2,000 unbound settled springs cost +0.02&nbsp;ms per frame, 1,000 property-bound settled springs +0.02&nbsp;ms, and even 1,000 underdamped springs (damping 0.2) returned to baseline within 3 seconds of settling; only actively animating springs cost real time (+8.5&nbsp;ms for 1,000 in motion). The honest conclusion: measure in your own game before adopting a fork. If your profiler shows settled springs burning frames, the fork exists; do not switch on hearsay.</p>
-
-<h3>Sizing and scaling</h3>
-<p>A recurring question with no built-in answer: how do you scale offset-based UI across resolutions when everything is code? The community's tool of choice is <code>usePx</code> from <a href="https://github.com/znotfireman/pretty-fusion-utils">pretty-fusion-utils</a>, a scale-factor helper in the spirit of the classic px pattern. Its ergonomics have sharp edges (the <code>px()</code> call cannot be used inside a computed because of scope capture, so values get declared outside), and the in-channel recommendation for the cleanest high-performance shape is to surface the scale as one state and multiply inside your computeds:</p>
-<pre><code>local pxScale = px:getScale()
-
-Size = scope:Computed(function(use)
-    local scale = use(pxScale)
-    return UDim2.fromOffset(DOT_SIZE.X * scale, DOT_SIZE.Y * scale)
-end)</code></pre>
-<p>The alternative is staying Scale-based (<code>UDim2.fromScale</code> plus aspect-ratio constraints), which needs no helper at all. Pick one per project; the template uses offsets for legibility and is small enough to convert either way.</p>
-
-<h3>Code, templates, and the team question</h3>
-<p>"Is it better to have a static UI template and hydrate it, or do everything by code?" The channel's answer: either works, <strong>stay consistent</strong>. The regulars prefer full code (easier to reference and manipulate what you built), and this guide is written for that mode. But one member's caveat is worth quoting for any team: "I prefer doing it by code but as soon as you're working with non-programmers that idea gets thrown out the window," against which another argued for making non-programmers adapt ("workflows that are programmer oriented should be prioritized"). If your team lands on designer-built trees, <code>Hydrate</code> is the bridge (§7: bindings die on cleanup, instances survive), and the paid <a href="https://create.roblox.com/store/asset/4749111907">Codify</a> plugin converts Studio-built UI into Fusion code.</p>
-
-<h3>Transient elements without ceremony</h3>
-<p>For notifications and other timed elements, the community pattern is exactly as boring as it should be: a component module, created into a container per event, torn down after a delay. When a member wondered about caching instead of destroy-and-recreate, the in-channel reply was the right default posture: "Tbh idk how much more performance that would bring. Do you have issues with frame drops or smth?" Given §11's measured 0.14&nbsp;ms create/destroy cycles, build the simple version first.</p>
-
-<h3>UI-Labs discipline, confirmed the hard way</h3>
-<p>A newcomer built components inside stories referencing <code>props.controls</code> directly, then struggled to "transfer UI-Labs UI to Fusion." The channel's correction matches §14 exactly: <strong>components never see UI-Labs</strong>. Write the component module first, taking plain props; the story exists only to preview it, mapping controls to props at the boundary: "generally you would just start with ur component module from the beginning, and only have the story for previewing it." If removing UI-Labs from your place would break a component, the dependency points the wrong way.</p>
-
-<h3>Smaller habits worth adopting</h3>
-<ul>
-  <li><strong>Timers:</strong> Fusion has no clock. Drive a <code>Value</code> from an external loop (<code>while task.wait(1) do timeLeft:set(...) end</code>) and derive everything else from it. The channel's answer to "is there some way in fusion" was simply "yes, an external loop."</li>
-  <li><strong>Dynamic data granularity:</strong> for frequently-changing data (position, health, cooldowns), keep a separate <code>Value</code> per property rather than one table state; this matches §10's granular-computed guidance from the similarity angle.</li>
-  <li><strong>Player state lives in its own module</strong>, away from UI code; members with custom state managers bind UI to them exactly like §6's store bridge.</li>
-  <li><strong>Fusion without its animations is still Fusion:</strong> asked whether Fusion is overkill alongside an existing animation library, the channel's answer: the point is reactivity and declarative instance trees; Tween and Spring are extras. Several members run their own animation hooks on top.</li>
-  <li><strong>Gotchas that cost people an afternoon:</strong> <code>FontFace</code> takes a <code>Font</code>, not an <code>Enum.Font</code> (use <code>Font.fromEnum(Enum.Font.X)</code>, as the template does); the <code>InfiniteLoop</code> error can be triggered by yielding code around a <code>:set()</code>, and one of its variants is not documented; the attribute special keys are easy to miss entirely (one member: "I've never seen it in the tutorials. I just looked for Attribute in the documentation"); and any example using <code>:get()</code> means the whole snippet predates 0.3 (§1).</li>
-  <li><strong>Tooling edges:</strong> roblox-ts users have <code>@rbxts/fusion</code> (no JSX) and <code>@rbxts/hotfusion</code> (JSX support); property autocomplete tooling for 0.3 is spotty; Studio's new CSS-like styling system's relationship to Fusion props was asked and never answered (now in §16's open questions).</li>
-</ul>
-
-<h3>On theming</h3>
-<p>Fourteen days of practitioner conversation and not one mention of themes, which matches how Roblox games ship: one deliberate visual identity, no runtime theme switching. This guide's earlier sections keep a <code>theme</code> module because centralized <em>design tokens</em> (colors, fonts, spacing in one frozen table) cost nothing and keep 50 components consistent. That is not a theming system, and you should not build one: no theme objects threaded through props, no reactive palette state, no light/dark infrastructure, unless your game has an actual feature that needs it. If that day comes, the pieces already exist (a <code>Contextual</code> holding a token table, read at construction time per §6's trap warning); until then, constants are the correct amount of engineering.</p>
-
 <h2 id="open">16 · Open questions</h2>
 <ul>
   <li><strong>Answered by the lab passes:</strong> For-object scaling (§8: incremental caching confirmed, O(n) diff per update, 1,000 frames in 7.5&nbsp;ms), router architecture costs (§11: hidden bindings evaluate at full rate; gating zeroes them; create/destroy is ~0.14&nbsp;ms per screen and leak-free), evaluation semantics (§3: computeds are lazy with per-evaluation dependencies), tween interruption behavior (§9: smooth retarget from current value), error semantics (§10: stale-value-and-recover, isolated blast radius), and Hydrate ownership (§7: bindings die, instance survives).</li>
@@ -1103,10 +1087,11 @@ end)</code></pre>
   <li>Negative result: <a href="https://github.com/devsarim/roblox-project-template">devsarim/roblox-project-template</a> verified as Roact/Rodux, not Fusion.</li>
 </ul>
 
+</section>
 <p class="footer-note">Method, research pass: 5 parallel search angles → 15 sources fetched → falsifiable claims extracted → each claim independently attacked by 3 adversarial verifiers (2-of-3 refutations kill a claim) → surviving claims synthesized. Sections marked <span class="badge b-syn">synthesis</span> are architecture derived from verified primitives where no external source was verified.<br><br>
 Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modules, Rojo layout) into a clean Roblox Studio baseplate; 16 test groups executed via Luau in the live place covering scope lifecycles, evaluation semantics, component composition, similarity behavior, For-object caching and scaling (including ForPairs and nested Fors), animation (including interruption and typed springs), Contextual, Hydrate/Out/attribute keys, error resilience, router teardown, hidden-binding costs, graph stress (deep chains, 1,000-binding fan-out), a 100-cycle leak check, and a simulated UI-Labs story-contract run. All timings are Studio edit-mode, single-threaded; directional, not absolute. Compiled and lab-expanded 2026-07-04 for AnimeAttack development.</p>
 
-</div></div></div>
+</div></div>
 <script>
 (function () {
   var root = document.querySelector(".fb");
@@ -1192,33 +1177,51 @@ Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modul
 })();
 
 (function () {
-  var links = Array.prototype.slice.call(document.querySelectorAll(".fb .navlinks a[href^='#']"));
-  if (!links.length) return;
-  var targets = [];
-  links.forEach(function (l) {
-    var el = document.getElementById(l.getAttribute("href").slice(1));
-    if (el) targets.push(el);
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".fb .tab"));
+  var panels = Array.prototype.slice.call(document.querySelectorAll(".fb .tab-panel"));
+  if (!tabs.length || !panels.length) return;
+  var names = panels.map(function (p) { return p.getAttribute("data-panel"); });
+
+  function show(name) {
+    var all = name === "all";
+    panels.forEach(function (p) {
+      if (all || p.getAttribute("data-panel") === name) {
+        p.removeAttribute("hidden");
+      } else {
+        p.setAttribute("hidden", "");
+      }
+    });
+    tabs.forEach(function (t) {
+      t.setAttribute("aria-selected", t.getAttribute("data-tab") === name ? "true" : "false");
+    });
+    try { localStorage.setItem("fbTab", name); } catch (e) {}
+  }
+
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      show(t.getAttribute("data-tab"));
+      window.scrollTo(0, 0);
+    });
   });
-  function setActive(id) {
-    links.forEach(function (l) {
-      l.classList.toggle("active", l.getAttribute("href") === "#" + id);
-    });
+
+  function reveal(hash) {
+    if (!hash || hash.length < 2) return false;
+    var el = document.getElementById(hash.slice(1));
+    if (!el) return false;
+    var panel = el.closest ? el.closest(".tab-panel") : null;
+    if (panel) show(panel.getAttribute("data-panel"));
+    setTimeout(function () { el.scrollIntoView(); }, 0);
+    return true;
   }
-  if ("IntersectionObserver" in window) {
-    var obs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) setActive(e.target.id);
-      });
-    }, { rootMargin: "0px 0px -65% 0px" });
-    targets.forEach(function (t) { obs.observe(t); });
-  }
-  var box = document.querySelector(".fb .navbox");
-  var narrow = window.matchMedia("(max-width: 920px)");
-  if (box && narrow.matches) {
-    box.removeAttribute("open");
-    links.forEach(function (l) {
-      l.addEventListener("click", function () { box.removeAttribute("open"); });
-    });
+
+  window.addEventListener("hashchange", function () {
+    reveal(location.hash);
+  });
+
+  if (!reveal(location.hash)) {
+    var saved = null;
+    try { saved = localStorage.getItem("fbTab"); } catch (e) {}
+    show(saved === "all" || names.indexOf(saved) >= 0 ? saved : "foundations");
   }
 })();
 </script>
