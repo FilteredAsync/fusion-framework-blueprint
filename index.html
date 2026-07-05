@@ -81,6 +81,13 @@
   .fb .topbar .themebar { margin-left: auto; }
   .fb .tab-panel[hidden] { display: none; }
   .fb .tab-panel > h2:first-child { border-top: none; padding-top: 0.6rem; margin-top: 1.2rem; }
+  .fb h4.api-entry { font-family: var(--mono); font-size: 0.95rem; font-weight: 600; margin: 1.7rem 0 0.2rem; color: var(--ink); }
+  .fb .apidoc { font-family: var(--display); font-size: 0.72rem; font-weight: 400; margin-left: 0.55rem; }
+  .fb .api-sig { margin: 0 0 0.4rem; }
+  .fb .api-sig code { font-size: 0.8rem; }
+  .fb a.termlink { text-decoration: none; }
+  .fb a.termlink code { color: var(--accent-ink); }
+  .fb a.termlink:hover code { text-decoration: underline; text-underline-offset: 2px; }
   @media print {
     .fb .tab-panel[hidden] { display: block; }
     .fb .topbar { position: static; }
@@ -209,6 +216,26 @@ health:set(50) <span class="cm">-- silent no-op: destroyed objects never error, 
 
 doCleanup(detached) <span class="cm">-- &gt; cleanup detached</span></code></pre>
 
+<h4 class="api-entry" id="api-scoped">scoped <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/memory/members/scoped/">official docs ↗</a></h4>
+<p class="api-sig"><code>scoped(Fusion, ...methodTables) → Scope</code></p>
+<p>Creates a new root scope: a plain array that collects every object constructed through it for later destruction. Any function tables passed in (Fusion itself, plus your own components) become callable as methods on the scope, which is why everything in this guide is written <code>scope:Thing(...)</code>. One root scope per app (§2); destroy with <code>doCleanup</code>.</p>
+
+<h4 class="api-entry" id="api-innerscope">innerScope <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/memory/members/innerscope/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:innerScope() → Scope</code></p>
+<p>Returns a child scope that inherits the parent's methods and is destroyed automatically when the parent cleans up, or earlier if you clean it yourself. The tool for any lifetime nested inside another: screens inside the app (§11), features inside a screen. The docs call it "often the safest choice for creating new scopes."</p>
+
+<h4 class="api-entry" id="api-derivescope">deriveScope <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/memory/members/derivescope/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope.deriveScope(scope) → Scope</code></p>
+<p>Copies a scope's method table without linking lifetimes: the derived scope lives until you clean it up yourself, independent of the source. Use it when something needs the same construction conveniences but outlives, or is unrelated to, the scope it was derived from. Lab-verified: derived contents survive the source's cleanup (§2).</p>
+
+<h4 class="api-entry" id="api-docleanup">doCleanup <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/memory/members/docleanup/">official docs ↗</a></h4>
+<p class="api-sig"><code>doCleanup(...tasks)</code></p>
+<p>The universal destructor. Destroys scope contents in reverse creation order, dispatching by type: functions are called, Instances destroyed, connections disconnected, objects with <code>:destroy()</code> or <code>:Destroy()</code> have it invoked, and nested tables recurse. Everything cleaned is gone for good, and using a destroyed object afterward fails <em>silently</em> rather than erroring (lab, §2), so drop references after cleanup; the runtime will not catch you.</p>
+
+<h4 class="api-entry" id="api-cleanup">cleanup</h4>
+<p class="api-sig"><code>cleanup(...tasks)</code> <em>(legacy alias)</em></p>
+<p>The 0.2-era name for <code>doCleanup</code>, kept for compatibility. Use <code>doCleanup</code> in new code; treat <code>cleanup</code> in examples as a staleness marker (§1).</p>
+
 <h3>State and the graph</h3>
 <div class="tablewrap"><table>
   <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
@@ -290,6 +317,34 @@ local byLabel = scope:ForPairs(settings, function(use, s, key, volume)
 end)
 print(peek(byLabel).MUSIC) <span class="cm">-- &gt; 80</span></code></pre>
 
+<h4 class="api-entry" id="api-value">Value <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/state/members/value/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:Value(initial) → Value&lt;T&gt;</code></p>
+<p>The writable state primitive. <code>:set(new)</code> is the only mutation; reads happen through <code>use()</code> inside reactive callbacks or <code>peek()</code> outside them. Every set runs the similarity check (§10): identical primitives and identical frozen table references are skipped, unfrozen tables always propagate. Keep shared Values behind writer methods in a store (§6), and freeze table payloads.</p>
+
+<h4 class="api-entry" id="api-computed">Computed <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/state/members/computed/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:Computed(function(use, scope) ... end) → Computed&lt;T&gt;</code></p>
+<p>Derived state. The callback reads its dependencies through the <code>use</code> function and returns the derived result. Lazily evaluated (lab, §3): it runs on first read, not at construction, and re-runs on the next read after a dependency changes. Dependencies register per evaluation, so branches not taken cost nothing, which is what makes gate patterns free (§11). Keep callbacks pure; wrap fallible work in <code>Safe</code>. If a callback errors, readers get the last good value and the computed recovers on the next valid input (lab, §10).</p>
+
+<h4 class="api-entry" id="api-peek">peek <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/state/members/peek/">official docs ↗</a></h4>
+<p class="api-sig"><code>peek(state) → T</code></p>
+<p>Reads any state object without registering a dependency. The correct read for event handlers, one-shot logic, and inside computed callbacks when you deliberately do not want that state to trigger re-runs (lab-verified: peeked states never invalidate the computed).</p>
+
+<h4 class="api-entry" id="api-observer">Observer <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/graph/members/observer/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:Observer(state) → Observer</code></p>
+<p>The side-effect primitive. <code>:onChange(callback)</code> fires after every meaningful change; <code>:onBind(callback)</code> fires once immediately and then on every change (lab). Connections disconnect automatically when the owning scope cleans up. Reserve Observers for effects that leave the reactive world (sounds, analytics, camera work); if the target is an instance property, use a <code>Computed</code> binding instead (field notes: derive, don't observe).</p>
+
+<h4 class="api-entry" id="api-forvalues">ForValues <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forvalues/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:ForValues(inputTable, function(use, scope, value) ... end) → For</code></p>
+<p>Transforms each value of a table (plain or state) through a processor, preserving keys. Each item receives its own scope, cleaned when the item leaves or reprocesses. Values are cached by identity: adding one item to 1,000 runs the processor exactly once, though every update pays an O(n) table diff (§8). Under frequent churn, prefer incremental key changes over whole-table swaps (field notes), and treat per-item cleanup timing as an implementation detail.</p>
+
+<h4 class="api-entry" id="api-forkeys">ForKeys <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forkeys/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:ForKeys(inputTable, function(use, scope, key) ... end) → For</code></p>
+<p>The key-side counterpart: transforms keys, preserves values, and reprocesses only affected keys (lab: adding 1 key among 100 ran the processor once). Use when identity lives in the key, like player lists keyed by UserId.</p>
+
+<h4 class="api-entry" id="api-forpairs">ForPairs <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/state/members/forpairs/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:ForPairs(inputTable, function(use, scope, key, value) ... end) → For</code></p>
+<p>Transforms both sides of the pair; the processor returns a new key and new value. One changed pair reprocesses exactly that pair (lab). Use when both sides carry meaning, like slot-keyed inventories.</p>
+
 <h3>Roblox instances and special keys</h3>
 <div class="tablewrap"><table>
   <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
@@ -342,6 +397,46 @@ local sign = scope:Hydrate(existingLabel) {
 doCleanup(scope)
 <span class="cm">-- box (New) is destroyed; existingLabel (Hydrate) survives, bindings removed (verified)</span></code></pre>
 
+<h4 class="api-entry" id="api-new">New <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/new/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:New "ClassName" { props } → Instance</code></p>
+<p>Creates an instance owned by the scope. String keys in the property table assign properties; when the assigned value is a state object, the property re-assigns synchronously on every change (lab, §7). Special keys handle everything else. Returns the instance directly, so assign it to a local (<code>[Ref]</code> no longer exists).</p>
+
+<h4 class="api-entry" id="api-hydrate">Hydrate <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/hydrate/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:Hydrate(instance) { props } → Instance</code></p>
+<p>Applies the same property-table semantics to an existing instance. Crucially, it does not take ownership: scope cleanup removes the bindings and leaves the instance alive (lab, §7). This makes it the bridge between Fusion and Studio-built or generated instance trees (field notes: the team question).</p>
+
+<h4 class="api-entry" id="api-children">Children <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/children/">official docs ↗</a></h4>
+<p class="api-sig"><code>[Children] = { ... }</code></p>
+<p>Parents child content into the instance: single instances, arrays, For-objects, state objects containing any of those, with arbitrary nesting flattened. The bridge between list rendering (§8) and the instance tree.</p>
+
+<h4 class="api-entry" id="api-child">Child <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/child/">official docs ↗</a></h4>
+<p class="api-sig"><code>Child(list) → Child</code></p>
+<p>A type-level helper that marks a value as parentable child content, useful when typing component <code>Content</code> props (§4). It has no runtime behavior of its own.</p>
+
+<h4 class="api-entry" id="api-onevent">OnEvent <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/onevent/">official docs ↗</a></h4>
+<p class="api-sig"><code>[OnEvent "Activated"] = function(...) ... end</code></p>
+<p>Connects a callback to the named instance event; the connection lives and dies with the instance and its scope. In component APIs, wrap these behind plain callback props (§4) rather than exposing the key.</p>
+
+<h4 class="api-entry" id="api-onchange">OnChange <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/onchange/">official docs ↗</a></h4>
+<p class="api-sig"><code>[OnChange "Text"] = function(newValue) ... end</code></p>
+<p>Fires the callback with the new value whenever the named property changes, via property-changed signals. For deriving state from a property, prefer <code>Out</code> into a <code>Value</code>.</p>
+
+<h4 class="api-entry" id="api-out">Out <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/out/">official docs ↗</a></h4>
+<p class="api-sig"><code>[Out "Text"] = someValue</code></p>
+<p>Writes property changes back into a <code>Value</code>: instance to state, one direction, including the property's initial value at bind time (lab, §7). Fusion has no two-way binding primitive; our bench found binding and outputting the same Value stable, but one-directional flow stays debuggable.</p>
+
+<h4 class="api-entry" id="api-attribute">Attribute <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/attribute/">official docs ↗</a></h4>
+<p class="api-sig"><code>[Attribute "Power"] = state</code></p>
+<p>Binds an instance attribute reactively, with the same semantics as property binding (lab). Easy to miss: the attribute keys barely appear in the tutorials (field notes).</p>
+
+<h4 class="api-entry" id="api-attributechange">AttributeChange <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/attributechange/">official docs ↗</a></h4>
+<p class="api-sig"><code>[AttributeChange "Power"] = function(newValue) ... end</code></p>
+<p>The attribute counterpart of <code>OnChange</code>: a callback fired with the new value when the named attribute changes.</p>
+
+<h4 class="api-entry" id="api-attributeout">AttributeOut <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/roblox/members/attributeout/">official docs ↗</a></h4>
+<p class="api-sig"><code>[AttributeOut "Power"] = someValue</code></p>
+<p>The attribute counterpart of <code>Out</code>: attribute changes written back into a <code>Value</code> (lab-verified, §7).</p>
+
 <h3>Animation</h3>
 <div class="tablewrap"><table>
   <tr><th>Export</th><th>Signature</th><th>What it does</th><th>Lab</th></tr>
@@ -369,6 +464,14 @@ local eased = scope:Tween(progress, info)
 progress:set(1)   <span class="cm">-- animates 0 to 1 over 0.2s (measured 1.00 when settled)</span>
 progress:set(0)   <span class="cm">-- retargets smoothly from wherever it is: measured 0.59 mid-flight,
                   -- no snapping (verified; the docs leave this behavior unstated)</span></code></pre>
+
+<h4 class="api-entry" id="api-tween">Tween <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/tween/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:Tween(goal, tweenInfo?) → Tween&lt;T&gt;</code></p>
+<p>A state object that follows its goal along an easing curve; bind properties to it like any other state. The <code>TweenInfo</code> can itself be a state object, which enables the community's zero-duration reset idiom (field notes). Retargeting mid-flight re-tweens smoothly from the current value rather than snapping (lab, §9).</p>
+
+<h4 class="api-entry" id="api-spring">Spring <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/spring/">official docs ↗</a></h4>
+<p class="api-sig"><code>scope:Spring(goal, speed?, damping?) → Spring&lt;T&gt;</code></p>
+<p>Physics-based following. Speed multiplies motion rate (doubling it halves the time); damping 0 is undamped, 1 is critical (no overshoot), higher is overdamped; both accept state objects and can change mid-flight (lab). Springs animate composite types too: UDim2 and Color3 goals converge (lab). Settled springs cost effectively nothing in our bench, and per-frame motion lives inside the spring, outside the dependency graph (§9).</p>
 
 <h3>Utilities</h3>
 <div class="tablewrap"><table>
@@ -406,7 +509,20 @@ local data = Fusion.Safe {
 <span class="cm">-- returns try's result normally, fallback's result on error (both paths verified)</span>
 
 print(Fusion.version.major, Fusion.version.minor) <span class="cm">-- &gt; 0 3</span></code></pre>
-<p>Exported types, for annotating your own code: <code>Scope&lt;S&gt;</code>, <code>UsedAs&lt;T&gt;</code> (raw value or state object; the props workhorse, §4), <code>Use</code>, <code>StateObject&lt;T&gt;</code>, <code>Value&lt;T&gt;</code>, <code>Computed&lt;T&gt;</code>, <code>For&lt;KO, VO&gt;</code>, <code>Observer</code>, <code>Spring&lt;T&gt;</code>, <code>Tween&lt;T&gt;</code>, <code>Animatable</code>, <code>Task</code>, <code>SpecialKey</code>, <code>PropertyTable</code>, <code>Child</code>, <code>ScopedObject</code>, <code>GraphObject</code>, <code>Contextual&lt;T&gt;</code>, <code>Version</code>.</p>
+
+<h4 class="api-entry" id="api-contextual">Contextual <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/general/members/contextual/">official docs ↗</a></h4>
+<p class="api-sig"><code>Contextual(default) → Contextual&lt;T&gt;</code></p>
+<p>A shared ambient value: read with <code>:now()</code>, temporarily overridden for the duration of a callback with <code>:is(value):during(fn)</code>. The sanctioned alternative to module-level globals (§6), and the only Fusion constructor that takes no scope (it is not destructible). Mind the lazy-evaluation trap: overrides must span the <em>read</em>, so capture <code>:now()</code> in construction-time code, never inside computed callbacks (lab, §6).</p>
+
+<h4 class="api-entry" id="api-safe">Safe <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/general/members/safe/">official docs ↗</a></h4>
+<p class="api-sig"><code>Safe { try = fn, fallback = function(err) ... end } → result</code></p>
+<p>An inline <code>xpcall</code> wrapper: returns <code>try</code>'s result normally, or <code>fallback</code>'s result when <code>try</code> errors (both paths lab-verified). The right shape for fallible work inside computed callbacks, like decoding a network payload.</p>
+
+<h4 class="api-entry" id="api-version">version <a class="apidoc" href="https://elttob.uk/Fusion/0.3/api-reference/general/members/version/">official docs ↗</a></h4>
+<p class="api-sig"><code>Fusion.version → { major: number, minor: number, isRelease: boolean }</code></p>
+<p>A frozen version table, <code>{ major = 0, minor = 3, isRelease = true }</code> in the current release. Useful for asserting the expected Fusion version at framework startup.</p>
+
+<p id="api-types">Exported types, for annotating your own code: <code>Scope&lt;S&gt;</code>, <code>UsedAs&lt;T&gt;</code> (raw value or state object; the props workhorse, §4), <code>Use</code>, <code>StateObject&lt;T&gt;</code>, <code>Value&lt;T&gt;</code>, <code>Computed&lt;T&gt;</code>, <code>For&lt;KO, VO&gt;</code>, <code>Observer</code>, <code>Spring&lt;T&gt;</code>, <code>Tween&lt;T&gt;</code>, <code>Animatable</code>, <code>Task</code>, <code>SpecialKey</code>, <code>PropertyTable</code>, <code>Child</code>, <code>ScopedObject</code>, <code>GraphObject</code>, <code>Contextual&lt;T&gt;</code>, <code>Version</code>.</p>
 
 <h2 id="uilabs-ref">UI-Labs at a glance</h2>
 <p><span class="badge b-doc">official docs</span>The storybook plugin for Roblox: build and iterate components in isolation, without running the game. The deep dive with the lab-tested story contract is in §14; this is the quick map.</p>
@@ -1223,6 +1339,35 @@ Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modul
     try { saved = localStorage.getItem("fbTab"); } catch (e) {}
     show(saved === "all" || names.indexOf(saved) >= 0 ? saved : "foundations");
   }
+})();
+
+(function () {
+  var MAP = {
+    scoped: "api-scoped", innerScope: "api-innerscope", deriveScope: "api-derivescope",
+    doCleanup: "api-docleanup", cleanup: "api-cleanup",
+    Value: "api-value", Computed: "api-computed", peek: "api-peek", use: "api-computed",
+    Observer: "api-observer", ForValues: "api-forvalues", ForKeys: "api-forkeys", ForPairs: "api-forpairs",
+    New: "api-new", Hydrate: "api-hydrate", Children: "api-children", Child: "api-child",
+    OnEvent: "api-onevent", OnChange: "api-onchange", Out: "api-out",
+    Attribute: "api-attribute", AttributeChange: "api-attributechange", AttributeOut: "api-attributeout",
+    Tween: "api-tween", Spring: "api-spring", Contextual: "api-contextual", Safe: "api-safe",
+    UsedAs: "api-types", StateObject: "api-types", Scope: "api-types"
+  };
+  var codes = Array.prototype.slice.call(document.querySelectorAll(".fb .wrap code"));
+  codes.forEach(function (c) {
+    if (c.closest("pre") || c.closest("a") || c.closest(".api-sig") || c.closest("h4")) return;
+    var text = c.textContent;
+    if (!text || text.length > 40) return;
+    var m = /^\[?(?:Fusion\.|scope:)?([A-Za-z_][A-Za-z0-9_]*)/.exec(text);
+    if (!m) return;
+    var target = MAP[m[1]];
+    if (!target || !document.getElementById(target)) return;
+    var a = document.createElement("a");
+    a.href = "#" + target;
+    a.className = "termlink";
+    c.parentNode.insertBefore(a, c);
+    a.appendChild(c);
+  });
 })();
 </script>
 
