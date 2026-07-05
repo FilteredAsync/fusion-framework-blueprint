@@ -80,6 +80,7 @@
   .fb .tab:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
   .fb .topbar .themebar { margin-left: auto; }
   .fb .tab-panel[hidden] { display: none; }
+  .fb [id] { scroll-margin-top: var(--topbar-h, 96px); }
   .fb .tab-panel > h2:first-child { border-top: none; padding-top: 0.6rem; margin-top: 1.2rem; }
   .fb h4.api-entry { font-family: var(--mono); font-size: 0.95rem; font-weight: 600; margin: 1.7rem 0 0.2rem; color: var(--ink); }
   .fb .apidoc { font-family: var(--display); font-size: 0.72rem; font-weight: 400; margin-left: 0.55rem; }
@@ -1339,6 +1340,17 @@ Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modul
     try { saved = localStorage.getItem("fbTab"); } catch (e) {}
     show(saved === "all" || names.indexOf(saved) >= 0 ? saved : "foundations");
   }
+})();
+
+(function () {
+  var bar = document.querySelector(".fb .topbar");
+  var root = document.querySelector(".fb");
+  if (!bar || !root) return;
+  function set() {
+    root.style.setProperty("--topbar-h", (bar.offsetHeight + 14) + "px");
+  }
+  set();
+  window.addEventListener("resize", set);
 })();
 
 (function () {
