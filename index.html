@@ -89,6 +89,11 @@
   .fb a.termlink { text-decoration: none; }
   .fb a.termlink code { color: var(--accent-ink); }
   .fb a.termlink:hover code { text-decoration: underline; text-underline-offset: 2px; }
+  .fb dl.gloss { margin: 1rem 0 0; }
+  .fb dl.gloss dt { font-family: var(--mono); font-size: 0.9rem; font-weight: 600; margin-top: 1rem; }
+  .fb dl.gloss dd { margin: 0.15rem 0 0; }
+  .fb a.glossref { color: inherit; text-decoration: underline dotted; text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent); text-underline-offset: 3px; }
+  .fb a.glossref:hover { color: var(--accent-ink); text-decoration-style: solid; }
   @media print {
     .fb .tab-panel[hidden] { display: block; }
     .fb .topbar { position: static; }
@@ -542,6 +547,59 @@ print(Fusion.version.major, Fusion.version.minor) <span class="cm">-- &gt; 0 3</
   <tr><td>Other formats</td><td>React/Roact, Vide, and Iris stories follow the same table shape with their own library field.</td></tr>
 </table></div>
 <p>The reason this slots into the framework with zero adaptation: §4's convention types every reactive prop as <code>UsedAs&lt;T&gt;</code>, and UI-Labs hands you controls as state objects. A story is therefore also an architecture test; a component that cannot mount from scope, target, and a props table has hidden dependencies (§14).</p>
+
+<h2 id="glossary">Glossary: the scripting terms this guide leans on</h2>
+<p>Plain-language definitions for the computer-science vocabulary used throughout. The first mention of each term in every tab carries a dotted underline linking back here.</p>
+<dl class="gloss">
+<dt id="g-reactive">reactive programming</dt>
+<dd>A style where you declare relationships between data and outputs ("this label shows the coin count") and the system propagates changes automatically, instead of you manually updating everything a change touches. Fusion's entire premise.</dd>
+<dt id="g-declarative">declarative</dt>
+<dd>Describing the result you want (a tree of instances, a binding) and letting the library work out the steps. The opposite of imperative code, which mutates things step by step.</dd>
+<dt id="g-depgraph">dependency graph</dt>
+<dd>The web Fusion builds of who-reads-what: every computed and binding records which states it read, so a change knows exactly which downstream values to mark stale. No scanning, no polling.</dd>
+<dt id="g-lazy">lazy evaluation</dt>
+<dd>Computing a value only at the moment something reads it, not when it is defined and not when its inputs change. Fusion's computeds are lazy (§3), so an unread computed costs nothing.</dd>
+<dt id="g-invalidation">invalidation</dt>
+<dd>Marking derived values as stale when a dependency changes, without recomputing them yet. Pairs with laziness: invalidate now, recompute on the next read.</dd>
+<dt id="g-memoization">memoization</dt>
+<dd>Caching a function's results so repeated calls with the same inputs return the stored answer instead of recomputing. React-family frameworks lean on it to avoid re-render work (§13). Fusion gets the same effect structurally, from the dependency graph plus the similarity test, so you rarely memoize by hand.</dd>
+<dt id="g-pure">pure function</dt>
+<dd>A function whose output depends only on its inputs, with no side effects. Computed callbacks should be pure; purity is what makes caching and re-running them safe.</dd>
+<dt id="g-sideeffect">side effect</dt>
+<dd>Any observable action besides returning a value: playing a sound, firing a remote, mutating outside state. Observers are Fusion's home for side effects; everything else should avoid them.</dd>
+<dt id="g-vdom">virtual DOM and diffing</dt>
+<dd>The React-family technique of building a lightweight description of the UI, comparing it against the previous one (diffing), and applying only the differences to real instances. Fusion has none of this; bindings write straight to properties (§13).</dd>
+<dt id="g-hydration">hydration</dt>
+<dd>Attaching live behavior to objects that already exist instead of creating new ones. Fusion's <code>Hydrate</code> binds reactive properties onto pre-built instances (§7).</dd>
+<dt id="g-immutable">immutability (frozen tables)</dt>
+<dd>Data that cannot change after creation. <code>table.freeze</code> makes a table read-only, which lets Fusion trust cheap identity checks (§10) and prevents a whole class of shared-mutation bugs.</dd>
+<dt id="g-similarity">similarity test</dt>
+<dd>Fusion's check on every set that decides whether a change is meaningful enough to propagate: primitives by equality, frozen and metatable tables by identity, unfrozen tables always propagate (§10).</dd>
+<dt id="g-gc">garbage collection (GC)</dt>
+<dd>Luau automatically reclaims memory nothing references anymore. GC pressure is what heavy churn creates: thousands of short-lived dead objects awaiting collection, visible as a climbing-then-settling memory graph (field notes).</dd>
+<dt id="g-weaktable">weak table</dt>
+<dd>A table whose entries do not keep their values alive; once the last real reference disappears, the entry vanishes at the next collection. How the lab's leak tests observe whether instances truly die.</dd>
+<dt id="g-destructor">destructor</dt>
+<dd>Code that runs when an object is destroyed, releasing whatever it held. <code>doCleanup</code> is a universal, type-dispatched destructor (§2).</dd>
+<dt id="g-idempotent">idempotent</dt>
+<dd>Safe to run repeatedly with the same result. For-object processors should be idempotent, because Fusion may re-run them more often than the theoretical minimum (§8).</dd>
+<dt id="g-ssot">single source of truth</dt>
+<dd>Every piece of state lives in exactly one place, and everything else derives from it. Stores are that place in this architecture (§6); duplicated state is where desyncs breed.</dd>
+<dt id="g-singlewriter">single-writer</dt>
+<dd>Only one module is allowed to mutate a piece of state; everyone else reads. Store methods enforce it (§6), which makes every change traceable to one file.</dd>
+<dt id="g-bigo">O(n), linear time</dt>
+<dd>Cost that grows in direct proportion to the number of items. For-object updates pay an O(n) table scan per change (§8): irrelevant at hundreds of items, worth attention at tens of thousands.</dd>
+<dt id="g-tokens">design tokens</dt>
+<dd>Named constants for visual decisions (colors, fonts, spacing) collected in one table so fifty components stay consistent. Not a theming system (field notes).</dd>
+<dt id="g-storybook">storybook</dt>
+<dd>A tool pattern for building UI components in isolation with live controls, named after the web's Storybook. UI-Labs is Roblox's (§14).</dd>
+<dt id="g-xpcall">xpcall</dt>
+<dd>Luau's protected call: runs a function and routes any error to a handler instead of crashing the thread. <code>Safe</code> wraps it in an inline-friendly shape.</dd>
+<dt id="g-propagation">propagation</dt>
+<dd>How a change travels through the dependency graph to everything downstream. A computed whose result did not meaningfully change stops it cold, acting as a propagation firewall (§10).</dd>
+<dt id="g-snapshot">snapshot</dt>
+<dd>A point-in-time copy of state passed around as plain data. The replication bridge applies server snapshots to stores (§6); freezing them keeps downstream updates cheap.</dd>
+</dl>
 
 </section>
 <section class="tab-panel" data-panel="foundations">
@@ -1363,22 +1421,84 @@ Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modul
     OnEvent: "api-onevent", OnChange: "api-onchange", Out: "api-out",
     Attribute: "api-attribute", AttributeChange: "api-attributechange", AttributeOut: "api-attributeout",
     Tween: "api-tween", Spring: "api-spring", Contextual: "api-contextual", Safe: "api-safe",
-    UsedAs: "api-types", StateObject: "api-types", Scope: "api-types"
+    UsedAs: "api-types", StateObject: "api-types", Scope: "api-types",
+    xpcall: "g-xpcall"
   };
   var codes = Array.prototype.slice.call(document.querySelectorAll(".fb .wrap code"));
   codes.forEach(function (c) {
     if (c.closest("pre") || c.closest("a") || c.closest(".api-sig") || c.closest("h4")) return;
     var text = c.textContent;
     if (!text || text.length > 40) return;
-    var m = /^\[?(?:Fusion\.|scope:)?([A-Za-z_][A-Za-z0-9_]*)/.exec(text);
-    if (!m) return;
-    var target = MAP[m[1]];
+    var target = null;
+    if (text.indexOf("table.freeze") === 0) {
+      target = "g-immutable";
+    } else {
+      var m = /^\[?(?:Fusion\.|scope:)?([A-Za-z_][A-Za-z0-9_]*)/.exec(text);
+      if (!m) return;
+      target = MAP[m[1]];
+    }
     if (!target || !document.getElementById(target)) return;
     var a = document.createElement("a");
     a.href = "#" + target;
     a.className = "termlink";
     c.parentNode.insertBefore(a, c);
     a.appendChild(c);
+  });
+})();
+
+(function () {
+  var TERMS = [
+    ["g-reactive", /\breactiv(?:e|ity)\b/],
+    ["g-declarative", /\bdeclarative(?:ly)?\b/],
+    ["g-depgraph", /\bdependency graph\b/],
+    ["g-lazy", /\blaz(?:y|ily)\b/],
+    ["g-invalidation", /\binvalidat\w*\b/],
+    ["g-memoization", /\bmemo(?:iz\w*|(?= boundaries))\b/],
+    ["g-pure", /\bpure(?:ly)?\b/],
+    ["g-sideeffect", /\bside[- ]effects?\b/],
+    ["g-vdom", /\b(?:virtual (?:DOM|tree)|VDOM|diff(?:ing|s)?)\b/],
+    ["g-hydration", /\bhydrat\w+\b/],
+    ["g-immutable", /\b(?:immutab\w+|frozen tables?)\b/],
+    ["g-similarity", /\bsimilarity (?:test|check|unit)\b/],
+    ["g-gc", /\b(?:garbage[- ]collect\w*|GC)\b/],
+    ["g-weaktable", /\bweak[- ]table\b/],
+    ["g-destructor", /\bdestructors?\b/],
+    ["g-idempotent", /\bidempotent\b/],
+    ["g-ssot", /\bsingle source of truth\b/],
+    ["g-singlewriter", /\bsingle-writer\b/],
+    ["g-bigo", /\bO\(n\)/],
+    ["g-tokens", /\bdesign tokens\b/],
+    ["g-storybook", /\b[Ss]torybook\b/],
+    ["g-propagation", /\bpropagat\w+\b/],
+    ["g-snapshot", /\bsnapshots?\b/]
+  ];
+  var panels = document.querySelectorAll(".fb .tab-panel");
+  panels.forEach(function (panel) {
+    TERMS.forEach(function (t) {
+      var id = t[0], re = t[1];
+      if (!document.getElementById(id)) return;
+      var walker = document.createTreeWalker(panel, NodeFilter.SHOW_TEXT, null);
+      var node;
+      while ((node = walker.nextNode())) {
+        var p = node.parentElement;
+        if (!p) continue;
+        if (p.closest("a, code, pre, h1, h2, h3, h4, .gloss, .badge, .lab-title, .api-sig")) continue;
+        var m = re.exec(node.textContent);
+        if (!m || !m[0].length) continue;
+        var range = document.createRange();
+        range.setStart(node, m.index);
+        range.setEnd(node, m.index + m[0].length);
+        var a = document.createElement("a");
+        a.className = "glossref";
+        a.href = "#" + id;
+        try {
+          range.surroundContents(a);
+        } catch (e) {
+          continue;
+        }
+        break;
+      }
+    });
   });
 })();
 </script>
