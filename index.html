@@ -71,6 +71,24 @@
   .fb .tbtn { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.35em 0.8em; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
   .fb .tbtn[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-ink); }
   .fb .tbtn:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+  .fb .layout { display: grid; grid-template-columns: 230px minmax(0, 74ch); gap: 3.2rem; max-width: 1120px; margin: 0 auto; align-items: start; }
+  .fb nav.side { position: sticky; top: 0; max-height: 100vh; overflow-y: auto; padding: 0.5rem 0 2rem; font-family: var(--display); scrollbar-width: thin; }
+  .fb .navtitle { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); margin: 0.6rem 0 0.2rem; }
+  .fb .navbox summary { display: none; }
+  .fb .navgroup { display: block; font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 1.1rem 0 0.3rem; }
+  .fb .navlinks a { display: block; font-size: 0.85rem; color: var(--muted); text-decoration: none; padding: 0.16rem 0.55rem; border-left: 2px solid transparent; border-radius: 0 4px 4px 0; }
+  .fb .navlinks a:hover { color: var(--ink); }
+  .fb .navlinks a.active { color: var(--accent-ink); border-left-color: var(--accent); background: var(--card); }
+  .fb nav.side .themebar { justify-content: flex-start; margin: 1.6rem 0 0; }
+  @media (max-width: 920px) {
+    .fb .layout { display: block; }
+    .fb nav.side { position: sticky; z-index: 50; background: var(--paper); border-bottom: 1px solid var(--line); max-height: none; overflow: visible; margin: -2.5rem -1.5rem 2rem; padding: 0.7rem 1.5rem; }
+    .fb .navbox summary { display: block; cursor: pointer; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
+    .fb .navlinks { columns: 2; column-gap: 1.5rem; padding-top: 0.6rem; }
+    .fb .navlinks a { border-left: none; break-inside: avoid; }
+    .fb .navtitle { display: none; }
+    .fb nav.side .themebar { margin: 0.8rem 0 0.2rem; }
+  }
   .fb .wrap { max-width: 74ch; margin: 0 auto; }
   .fb h1, .fb h2, .fb h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; }
   .fb h1 { font-size: 2.3rem; font-weight: 700; letter-spacing: -0.02em; margin: 0.4rem 0 0.8rem; }
@@ -118,17 +136,54 @@
   .fb .footer-note { margin-top: 3rem; border-top: 1px solid var(--line); padding-top: 1.2rem; font-size: 0.85rem; color: var(--muted); font-family: var(--display); }
   @media (max-width: 640px) { .fb .toc { columns: 1; } .fb h1 { font-size: 1.8rem; } }
 </style>
-<div class="fb" data-theme="dark"><div class="wrap">
+<div class="fb" data-theme="dark"><div class="layout">
 
+<nav class="side" aria-label="Contents">
+<div class="navtitle">Fusion 0.3 blueprint</div>
+<details open class="navbox">
+<summary>Contents</summary>
+<div class="navlinks">
+  <a href="#top">Overview</a>
+  <span class="navgroup">References</span>
+  <a href="#api">Fusion API</a>
+  <a href="#uilabs-ref">UI-Labs at a glance</a>
+  <a href="#fieldnotes">Community field notes</a>
+  <span class="navgroup">Foundations</span>
+  <a href="#version">1 · Version check</a>
+  <a href="#scopes">2 · Scopes</a>
+  <a href="#state">3 · State</a>
+  <a href="#components">4 · Components</a>
+  <span class="navgroup">Building</span>
+  <a href="#org">5 · Organization</a>
+  <a href="#stores">6 · Stores &amp; data</a>
+  <a href="#instances">7 · Instances &amp; keys</a>
+  <a href="#lists">8 · Lists</a>
+  <a href="#animation">9 · Animation</a>
+  <span class="navgroup">Shipping</span>
+  <a href="#perf">10 · Performance</a>
+  <a href="#routing">11 · Routing</a>
+  <a href="#migration">12 · 0.2 → 0.3</a>
+  <span class="navgroup">Context</span>
+  <a href="#alternatives">13 · React-lua &amp; Vide</a>
+  <a href="#uilabs">14 · UI-Labs workbench</a>
+  <a href="#template">15 · Template place</a>
+  <span class="navgroup">Closing</span>
+  <a href="#open">16 · Open questions</a>
+  <a href="#sources">17 · Sources</a>
+</div>
+</details>
 <div class="themebar" role="group" aria-label="Color theme">
   <button class="tbtn" data-set-theme="dark" aria-pressed="true">Dark</button>
   <button class="tbtn" data-set-theme="midnight" aria-pressed="false">Midnight</button>
   <button class="tbtn" data-set-theme="studio" aria-pressed="false">Studio</button>
   <button class="tbtn" data-set-theme="light" aria-pressed="false">Light</button>
 </div>
+</nav>
+
+<div class="wrap">
 
 <span class="eyebrow">Architecture blueprint · adversarially verified research</span>
-<h1>Building a game UI framework on Fusion 0.3</h1>
+<h1 id="top">Building a game UI framework on Fusion 0.3</h1>
 <p class="kicker">How to organize, state-manage, and structure fully code-authored Roblox UI on Fusion: from primary sources, with every load-bearing claim verified against the current release.</p>
 <p class="meta">Compiled 2026-07-04 · 103 research agents · 15 sources fetched · 11 core findings, each surviving 3-of-3 adversarial verification votes · expanded with four empirical lab passes (21 test groups) against real Fusion v0.3-beta in Roblox Studio · UI-Labs workbench chapter from primary docs · field notes from 394 Roblox OSS community messages spanning April to July 2026</p>
 
@@ -140,26 +195,7 @@
   <div><span class="badge b-com">community</span> Practitioner reports from the Roblox OSS Discord's Fusion channel (394 messages, April 22 to July 5, 2026). Anecdotes, not verified claims; where testable, they were lab-checked and the result is stated.</div>
 </div>
 
-<h2 id="toc">Contents</h2>
-<p style="margin-bottom:0.4rem;"><strong style="font-family:var(--display);">References:</strong> <a href="#api">Fusion v0.3-beta API</a> · <a href="#uilabs-ref">UI-Labs at a glance</a> · <a href="#fieldnotes">Community field notes</a></p>
-<ol class="toc">
-  <li><a href="#version">Version reality check</a></li>
-  <li><a href="#scopes">Scopes: the core mental model</a></li>
-  <li><a href="#state">State primitives</a></li>
-  <li><a href="#components">Component conventions</a></li>
-  <li><a href="#org">Project organization</a></li>
-  <li><a href="#stores">Stores and server data</a></li>
-  <li><a href="#instances">Instances and bindings</a></li>
-  <li><a href="#lists">List rendering</a></li>
-  <li><a href="#animation">Animation</a></li>
-  <li><a href="#perf">Performance</a></li>
-  <li><a href="#routing">Screens and routing</a></li>
-  <li><a href="#migration">0.2 → 0.3 translation table</a></li>
-  <li><a href="#alternatives">Context: React-lua and Vide</a></li>
-  <li><a href="#uilabs">Component workbench: UI-Labs</a></li>
-  <li><a href="#template">The template place</a></li>
-  <li><a href="#open">Open questions</a></li>
-</ol>
+
 
 <h2 id="api">Fusion v0.3-beta: the complete API</h2>
 <p><span class="badge b-lab">lab tested</span>Everything Fusion exports, taken from the actual export table in the installed source (<code>src/init.luau</code>, 26 members), not from docs or memory. The lab column marks what was directly exercised in the Studio test passes. Constructors marked with a scope are called as scope methods under <code>scoped()</code> syntax, e.g. <code>scope:Value(0)</code>.</p>
@@ -1070,7 +1106,7 @@ end)</code></pre>
 <p class="footer-note">Method, research pass: 5 parallel search angles → 15 sources fetched → falsifiable claims extracted → each claim independently attacked by 3 adversarial verifiers (2-of-3 refutations kill a claim) → surviving claims synthesized. Sections marked <span class="badge b-syn">synthesis</span> are architecture derived from verified primitives where no external source was verified.<br><br>
 Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modules, Rojo layout) into a clean Roblox Studio baseplate; 16 test groups executed via Luau in the live place covering scope lifecycles, evaluation semantics, component composition, similarity behavior, For-object caching and scaling (including ForPairs and nested Fors), animation (including interruption and typed springs), Contextual, Hydrate/Out/attribute keys, error resilience, router teardown, hidden-binding costs, graph stress (deep chains, 1,000-binding fan-out), a 100-cycle leak check, and a simulated UI-Labs story-contract run. All timings are Studio edit-mode, single-threaded; directional, not absolute. Compiled and lab-expanded 2026-07-04 for AnimeAttack development.</p>
 
-</div></div>
+</div></div></div>
 <script>
 (function () {
   var root = document.querySelector(".fb");
@@ -1153,6 +1189,37 @@ Method, lab passes: Fusion v0.3-beta built from the GitHub source tree (75 modul
   document.querySelectorAll(".fb pre code").forEach(function (block) {
     block.innerHTML = highlight(block.textContent);
   });
+})();
+
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll(".fb .navlinks a[href^='#']"));
+  if (!links.length) return;
+  var targets = [];
+  links.forEach(function (l) {
+    var el = document.getElementById(l.getAttribute("href").slice(1));
+    if (el) targets.push(el);
+  });
+  function setActive(id) {
+    links.forEach(function (l) {
+      l.classList.toggle("active", l.getAttribute("href") === "#" + id);
+    });
+  }
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) setActive(e.target.id);
+      });
+    }, { rootMargin: "0px 0px -65% 0px" });
+    targets.forEach(function (t) { obs.observe(t); });
+  }
+  var box = document.querySelector(".fb .navbox");
+  var narrow = window.matchMedia("(max-width: 920px)");
+  if (box && narrow.matches) {
+    box.removeAttribute("open");
+    links.forEach(function (l) {
+      l.addEventListener("click", function () { box.removeAttribute("open"); });
+    });
+  }
 })();
 </script>
 
