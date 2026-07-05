@@ -29,6 +29,7 @@
     --v-fg: #86D8A0; --v-bg: #1C3A28;
     --d-fg: #85CBE0; --d-bg: #163540;
     --s-fg: #E4BE7C; --s-bg: #3B2F16;
+    --c-fg: #E0A3C8; --c-bg: #3A1F2E;
     --tk-k: #C586C0; --tk-s: #98C379; --tk-n: #D19A66; --tk-b: #61AFEF;
     color-scheme: dark;
   }
@@ -40,6 +41,7 @@
     --v-fg: #8FE0A8; --v-bg: #15321F;
     --d-fg: #96A0FF; --d-bg: #1B2145;
     --s-fg: #E8C27E; --s-bg: #332911;
+    --c-fg: #E8A8D8; --c-bg: #33152B;
     --tk-k: #B48EF0; --tk-s: #8FD0A0; --tk-n: #E0B070; --tk-b: #8B96F8;
   }
   .fb[data-theme="studio"] {
@@ -50,6 +52,7 @@
     --v-fg: #8CD9A0; --v-bg: #24402C;
     --d-fg: #85CBE5; --d-bg: #1E3946;
     --s-fg: #E2BC7A; --s-bg: #403213;
+    --c-fg: #E2A6CA; --c-bg: #402032;
     --tk-k: #F86D7C; --tk-s: #ADF195; --tk-n: #FFC600; --tk-b: #84D6F7;
   }
   .fb[data-theme="light"] {
@@ -60,6 +63,7 @@
     --v-fg: #1B7A3D; --v-bg: #E8F4EC;
     --d-fg: #085566; --d-bg: #E6F2F5;
     --s-fg: #8A5A08; --s-bg: #F7EFDD;
+    --c-fg: #8A2E5C; --c-bg: #F9E8F1;
     color-scheme: light;
   }
   .fb { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; padding: 3.5rem 1.5rem 5rem; min-height: 100vh; }
@@ -90,6 +94,7 @@
   .fb .b-doc { color: var(--d-fg); background: var(--d-bg); }
   .fb .b-syn { color: var(--s-fg); background: var(--s-bg); }
   .fb .b-lab { color: #FFFFFF; background: var(--accent-strong); }
+  .fb .b-com { color: var(--c-fg); background: var(--c-bg); }
   .fb .lab { border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); background: var(--card); border-radius: 8px; padding: 0.85rem 1.1rem; margin: 1.1rem 0 1.4rem; font-size: 0.93rem; }
   .fb .lab .lab-title { font-family: var(--mono); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 0.4rem; }
   .fb .lab ul { margin-bottom: 0; }
@@ -125,17 +130,18 @@
 <span class="eyebrow">Architecture blueprint · adversarially verified research</span>
 <h1>Building a game UI framework on Fusion 0.3</h1>
 <p class="kicker">How to organize, state-manage, and structure fully code-authored Roblox UI on Fusion: from primary sources, with every load-bearing claim verified against the current release.</p>
-<p class="meta">Compiled 2026-07-04 · 103 research agents · 15 sources fetched · 11 core findings, each surviving 3-of-3 adversarial verification votes · expanded same day with two empirical lab passes (16 test groups) against real Fusion v0.3-beta in Roblox Studio · UI-Labs workbench chapter added from primary docs</p>
+<p class="meta">Compiled 2026-07-04 · 103 research agents · 15 sources fetched · 11 core findings, each surviving 3-of-3 adversarial verification votes · expanded with three empirical lab passes (19 test groups) against real Fusion v0.3-beta in Roblox Studio · UI-Labs workbench chapter from primary docs · field notes from 98 Roblox OSS community messages</p>
 
 <div class="legend">
   <div><span class="badge b-ver">verified 3–0</span> Claim survived three independent adversarial refutation attempts against primary sources.</div>
   <div><span class="badge b-doc">official docs</span> Read directly from the Fusion 0.3 documentation or repository during compilation.</div>
   <div><span class="badge b-syn">synthesis</span> Recommended pattern derived from verified primitives; sound reasoning, but no external codebase was verified using it.</div>
   <div><span class="badge b-lab">lab tested</span> Executed against Fusion v0.3-beta installed from source in a clean Studio place; numbers are measured, not quoted. Timings are single-threaded Studio edit-mode figures; treat as directional.</div>
+  <div><span class="badge b-com">community</span> Practitioner reports from the Roblox OSS Discord's Fusion channel (98 messages, June 19 to July 5, 2026). Anecdotes, not verified claims; where testable, they were lab-checked and the result is stated.</div>
 </div>
 
 <h2 id="toc">Contents</h2>
-<p style="margin-bottom:0.4rem;"><strong style="font-family:var(--display);">References:</strong> <a href="#api">Fusion v0.3-beta API</a> · <a href="#uilabs-ref">UI-Labs at a glance</a></p>
+<p style="margin-bottom:0.4rem;"><strong style="font-family:var(--display);">References:</strong> <a href="#api">Fusion v0.3-beta API</a> · <a href="#uilabs-ref">UI-Labs at a glance</a> · <a href="#fieldnotes">Community field notes</a></p>
 <ol class="toc">
   <li><a href="#version">Version reality check</a></li>
   <li><a href="#scopes">Scopes: the core mental model</a></li>
@@ -413,6 +419,7 @@ print(Fusion.version.major, Fusion.version.minor) <span class="cm">-- &gt; 0 3</
 <h2 id="version">1 · Version reality check</h2>
 <p><span class="badge b-ver">verified 3–0</span>The current release of Fusion is <strong>v0.3-beta</strong>, published 2024-08-30: GitHub's designated "Latest" and the only non-prerelease tag. A 0.4 exists only as an unreleased dev line (<code>0.4.0-dev1</code> in <code>wally.toml</code>) with draft docs. Everything in this report targets 0.3.</p>
 <p class="src">Sources: <a href="https://github.com/dphfox/Fusion/releases">dphfox/Fusion releases</a>, <a href="https://github.com/dphfox/Fusion">repo</a></p>
+<p><span class="badge b-com">community</span>Maintenance status, from the author directly (Roblox OSS Discord, June 20, 2026): "No features are being worked on, but I vaguely keep an eye on things in here to make sure things still tick along," and, having joined Roblox, "my attention has been elsewhere in the ecosystem." Plan accordingly: treat v0.3-beta as the long-term target, expect fixes to come from the community rather than upstream, and do not gate your framework on 0.4 shipping.</p>
 <p>This matters more than it sounds: <strong>most community material (tutorials, DevForum answers, and the two best open-source component libraries) targets 0.2 and will not run on 0.3.</strong> The instant staleness markers:</p>
 <div class="tablewrap"><table>
   <tr><th>If you see…</th><th>It's 0.2-era, translate to…</th></tr>
@@ -553,6 +560,7 @@ local ui = scope:Button {
 ├── stories/         <span class="cm">-- dev-only component stories, excluded from ship</span>
 └── App.luau         <span class="cm">-- bootstrap: root scope, stores, router, ScreenGui</span></code></pre>
 <div class="rule-card"><strong>Framework rule 2.</strong> Primitives depend on theme only. Composed components depend on primitives. Screens depend on components and stores. Stores depend on nothing UI-side. Dependencies point one way, and the scope flows down through every layer as the first argument.</div>
+<p>Two moderating notes so this layout doesn't get over-applied. First, <span class="badge b-com">community</span><strong>not everything is a component</strong>: inside a screen, name one-off sub-trees as local variables and local functions rather than promoting them to modules; component modules are for things that get reused or need stories (see the field notes for the practitioner thread behind this). Second, the <code>theme/</code> layer here means <em>design tokens</em>, a frozen table of colors, fonts, and spacing constants, not a theming system; most Roblox games ship exactly one visual identity, so keep the constants and skip the switching machinery (see "On theming" in the field notes).</p>
 
 <h2 id="stores">6 · Stores and server data</h2>
 <p><span class="badge b-ver">verified 3–0</span>The official docs explicitly warn against module-level global state: "you can't destroy globals until the very end of your program," plus hidden dependencies and untestability. The sanctioned alternative for widely-shared values is the <strong>Contextual</strong> API: <code>Fusion.Contextual(default)</code>, temporarily overridden with <code>:is(value):during(callback)</code> and read with <code>:now()</code>. The docs frame globals as risky-but-permitted, not forbidden.</p>
@@ -671,6 +679,7 @@ scope:New "Frame" { Position = slide }  <span class="cm">-- flip menuOpen; physi
   <li><strong>Springs keep the graph quiet.</strong> While the spring animated the bound property every frame, the goal computed evaluated only 3 times total; the per-frame motion lives inside the animation object, outside the dependency graph. Interpose springs/tweens freely; they don't multiply reactive work.</li>
   <li><strong>Interrupted tweens re-tween from their current value</strong>, a question the docs leave open, now measured: a linear 0→10 tween interrupted at 5.05 by a new goal of 0 descended smoothly (3.80 a tenth of a second later) and settled at 0. No snapping, no restart-from-goal. Retargeting mid-flight is safe.</li>
   <li>Typed springs confirmed: <code>UDim2</code> and <code>Color3</code> goals both animated and converged; the "animatable types" phrase covers Roblox's composite value types in practice.</li>
+  <li><strong>Settled springs cost nothing in our bench</strong>, despite community reports that they never sleep (issue #370): 1,000 property-bound settled springs added +0.02&nbsp;ms per frame, and underdamped ones returned to baseline within 3 seconds. Animating springs are the real cost (+8.5&nbsp;ms for 1,000 in motion). Details and the fork story in the field notes.</li>
 </ul></div>
 <p class="src">Sources: <a href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/tween/">Tween</a>, <a href="https://elttob.uk/Fusion/0.3/api-reference/animation/members/spring/">Spring</a></p>
 
@@ -785,6 +794,7 @@ return {
 <ul>
   <li><span class="badge b-lab">lab tested</span>We executed the exact story above under a simulated UI-Labs runner (scope created via <code>scoped(Fusion)</code>, controls wrapped as <code>scope:Value</code>s, <code>story(props)</code> called once, <code>doCleanup</code> on unmount): the component mounted into the target, panel-style control writes drove the UI reactively (<code>Text</code> and a computed over <code>Disabled</code> both updated), and <code>doCleanup</code> alone fully unmounted everything: no cleanup function needed, matching the documented 0.3 behavior.</li>
   <li>Framework takeaway: treat every component as story-first. If a component can't be mounted with nothing but a scope, a target, and a props table of state objects, it has hidden dependencies; the story format is a free architecture test.</li>
+  <li><span class="badge b-com">community</span>The failure mode is real: a Roblox OSS member built components inside stories referencing <code>props.controls</code> directly, then couldn't extract them for the game. The channel's rule matches this section: components take plain props, only the story touches controls, and the component module comes first with the story as a preview.</li>
 </ul></div>
 <p class="src">Sources: <a href="https://ui-labs.luau.page/">ui-labs.luau.page</a> (get started, installation, Fusion stories, function stories, controls), <a href="https://github.com/PepeElToro41/ui-labs">PepeElToro41/ui-labs</a> (v1.6.0, Jan 2026)</p>
 
@@ -969,11 +979,50 @@ end)
 router.Navigate("Hub")</code></pre>
 <p>Swap the mock bridge for a real remote listener and the template becomes a production seed. The <code>Button.story</code> module inside works with the UI-Labs plugin out of the box (§14).</p>
 
+<h2 id="fieldnotes">Field notes: how the Fusion community actually works</h2>
+<p><span class="badge b-com">community</span>Sourced from 98 messages in the Roblox OSS Discord's Fusion channel (June 19 to July 5, 2026). This is the ground truth this guide would otherwise assume: what practitioners do, what trips them up, and where the architecture above should stay humble. Testable claims were checked in the lab; the results are inline.</p>
+
+<h3>Not everything is a component</h3>
+<p>The most instructive thread: a developer with "12 levels of indentation" and "500 components" asking how to stay sane. The channel's answers, in order of preference: assign sub-trees to <strong>local variables</strong> (constructors return instances, so <code>local header = scope:New "Frame" {...}</code> then compose them), pull repeated chunks into <strong>local functions in the same file</strong>, use <code>do</code>/<code>end</code> blocks for editor folding, and only promote something to a component module <em>when it gets reused</em>. As one member put it about their deep one-off tree: "but its not gonna get reused." One member also cautioned that moving helpers to other modules or wrapping them in OOP carries a performance cost in Luau; whether or not that holds in your case, the instinct is right. Component modules are for reuse and stories; locals are for readability. A 500-component file is a readability failure, not a reason to build more framework.</p>
+
+<h3>Derive, don't observe</h3>
+<p>A beginner bound a property by watching a value with an <code>Observer</code> and manually setting the property. The correction given in-channel is the rule this guide's §3 implies, stated plainly: <strong>if a property can be expressed as a function of state, use a <code>Computed</code> binding; Observers are only for side effects that leave the reactive world</strong> (sounds, analytics, camera shakes). An Observer-plus-manual-set is always a smell when the target is an instance property.</p>
+
+<h3>The instant-reset tween idiom</h3>
+<p>Asked how to snap a tween back to its start without animating, three separate members converged on the same pattern this guide's lab confirmed reactive <code>TweenInfo</code> makes possible: hold the <code>TweenInfo</code> in state, and set a zero-duration info for the frame where you want a snap.</p>
+<pre><code>local info = scope:Value(TweenInfo.new(0.3))
+local progress = scope:Tween(target, info)
+
+local function snapTo(value)
+    info:set(TweenInfo.new(0))  <span class="cm">-- zero-duration: next change is instant</span>
+    target:set(value)
+    task.defer(function()
+        info:set(TweenInfo.new(0.3))
+    end)
+end</code></pre>
+
+<h3>Springs and the sleep question</h3>
+<p><span class="badge b-com">community</span>Members report that "springs don't sleep" (<a href="https://github.com/dphfox/Fusion/issues/370">issue #370</a>), meaning settled springs keep consuming frame time, and recommend <a href="https://github.com/plainsour/Fusion">plainsour's fork</a> (based on 0.3) which re-enables spring sleeping plus detach and cleanup fixes. <span class="badge b-lab">lab tested</span>This did <strong>not reproduce</strong> on stock v0.3-beta in our bench: 2,000 unbound settled springs cost +0.02&nbsp;ms per frame, 1,000 property-bound settled springs +0.02&nbsp;ms, and even 1,000 underdamped springs (damping 0.2) returned to baseline within 3 seconds of settling; only actively animating springs cost real time (+8.5&nbsp;ms for 1,000 in motion). The honest conclusion: measure in your own game before adopting a fork. If your profiler shows settled springs burning frames, the fork exists; do not switch on hearsay.</p>
+
+<h3>UI-Labs discipline, confirmed the hard way</h3>
+<p>A newcomer built components inside stories referencing <code>props.controls</code> directly, then struggled to "transfer UI-Labs UI to Fusion." The channel's correction matches §14 exactly: <strong>components never see UI-Labs</strong>. Write the component module first, taking plain props; the story exists only to preview it, mapping controls to props at the boundary: "generally you would just start with ur component module from the beginning, and only have the story for previewing it." If removing UI-Labs from your place would break a component, the dependency points the wrong way.</p>
+
+<h3>Smaller habits worth adopting</h3>
+<ul>
+  <li><strong>Timers:</strong> Fusion has no clock. Drive a <code>Value</code> from an external loop (<code>while task.wait(1) do timeLeft:set(...) end</code>) and derive everything else from it. The channel's answer to "is there some way in fusion" was simply "yes, an external loop."</li>
+  <li><strong>Dynamic data granularity:</strong> for frequently-changing data (position, health, cooldowns), keep a separate <code>Value</code> per property rather than one table state; this matches §10's granular-computed guidance from the similarity angle.</li>
+  <li><strong>Player state lives in its own module</strong>, away from UI code; members with custom state managers bind UI to them exactly like §6's store bridge.</li>
+  <li><strong>Fusion without its animations is still Fusion:</strong> asked whether Fusion is overkill alongside an existing animation library, the channel's answer: the point is reactivity and declarative instance trees; Tween and Spring are extras. Several members run their own animation hooks on top.</li>
+</ul>
+
+<h3>On theming</h3>
+<p>Fourteen days of practitioner conversation and not one mention of themes, which matches how Roblox games ship: one deliberate visual identity, no runtime theme switching. This guide's earlier sections keep a <code>theme</code> module because centralized <em>design tokens</em> (colors, fonts, spacing in one frozen table) cost nothing and keep 50 components consistent. That is not a theming system, and you should not build one: no theme objects threaded through props, no reactive palette state, no light/dark infrastructure, unless your game has an actual feature that needs it. If that day comes, the pieces already exist (a <code>Contextual</code> holding a token table, read at construction time per §6's trap warning); until then, constants are the correct amount of engineering.</p>
+
 <h2 id="open">16 · Open questions</h2>
 <ul>
   <li><strong>Answered by the lab passes:</strong> For-object scaling (§8: incremental caching confirmed, O(n) diff per update, 1,000 frames in 7.5&nbsp;ms), router architecture costs (§11: hidden bindings evaluate at full rate; gating zeroes them; create/destroy is ~0.14&nbsp;ms per screen and leak-free), evaluation semantics (§3: computeds are lazy with per-evaluation dependencies), tween interruption behavior (§9: smooth retarget from current value), error semantics (§10: stale-value-and-recover, isolated blast radius), and Hydrate ownership (§7: bindings die, instance survives).</li>
   <li>Still open: how shipped Fusion games bridge replication into stores; §6's pattern is now lab-tested against a mock remote, but no open-source shipped-game codebase has been observed doing it.</li>
-  <li>Still open: Fusion 0.4's timeline and how much of a 0.3 framework survives it; 0.4 docs are draft; scopes and component signatures appear stable across the 0.3→0.4 draft docs, but nothing is guaranteed pre-1.0.</li>
+  <li>Largely answered by the field notes: Fusion 0.4's timeline. The author stated (June 2026) that no features are being worked on since he joined Roblox, so 0.4 has no expected date; build against v0.3-beta as the long-term target and watch community forks for fixes. What survives an eventual 0.4 remains unknown, though scopes and component signatures appear stable across the draft docs.</li>
   <li>New from the lab: whether the silent no-op behavior of destroyed state objects (§2) is intended API contract or an implementation detail that could become a hard error in 0.4; code defensively either way.</li>
 </ul>
 
